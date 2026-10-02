@@ -5,6 +5,7 @@ import HomeClient from "./home-client";
 import ShopClient from "./shop/shop-client";
 import ProductClient from "./product/[slug]/product-client";
 import OrderClient from "./order/order-client";
+import InfoPage, { type InfoKey } from "@/components/site/info-page";
 import { parseHash, PreviewRouteCtx, type Route } from "@/lib/nav";
 import { scanReveal } from "@/components/site/reveal";
 
@@ -19,8 +20,8 @@ export default function PreviewApp() {
       const r = parseHash(location.hash);
       setRoute(r);
       setN((x) => x + 1);
-      const changed = prevView !== r.view + (r.product ?? "");
-      prevView = r.view + (r.product ?? "");
+      const changed = prevView !== r.view + (r.product ?? "") + (r.page ?? "");
+      prevView = r.view + (r.product ?? "") + (r.page ?? "");
       requestAnimationFrame(() =>
         setTimeout(() => {
           if (r.section) document.getElementById(r.section)?.scrollIntoView({ behavior: changed ? "auto" : "smooth" });
@@ -41,6 +42,7 @@ export default function PreviewApp() {
         {route.view === "shop" && <ShopClient />}
         {route.view === "product" && route.product && <ProductClient key={route.product + n} product={route.product} />}
         {route.view === "order" && <OrderClient />}
+        {route.view === "page" && route.page && <InfoPage key={route.page} page={route.page as InfoKey} />}
       </Suspense>
     </PreviewRouteCtx.Provider>
   );

@@ -15,7 +15,9 @@ export const PREVIEW = process.env.NEXT_PUBLIC_PREVIEW === "1";
 /** Public file path: absolute on the real site, relative in the preview. */
 export const asset = (p: string) => (PREVIEW ? p.replace(/^\//, "") : p);
 
-const SECTIONS = ["how", "pricing", "demo", "faq", "for", "why", "shop", "stands"];
+const SECTIONS = ["shop"];
+/** Detail pages that have their own URL (/how, /faq, ...). Keep in sync with INFO_PAGES. */
+export const PAGES = ["stands", "how", "pricing", "demo", "for", "why", "faq"];
 
 /** "/product/card?plan=plus" -> "#card-plus", "/#faq" -> "#faq" */
 export function toHash(href: string) {
@@ -28,18 +30,20 @@ export function toHash(href: string) {
   if (path === "/" || path === "") return "#home";
   if (path === "/shop") return "#store";
   if (path === "/order") return "#order";
+  if (PAGES.includes(path.slice(1))) return "#" + path.slice(1);
   const m = path.match(/^\/product\/(card|stand|instapay)/);
   if (m) return `#${m[1]}${plan ? "-" + plan : ""}${plan && style ? "-" + style : ""}`;
   return "#home";
 }
 
-export type Route = { view: "home" | "shop" | "product" | "order"; product?: "card" | "stand" | "instapay"; params: URLSearchParams; section?: string };
+export type Route = { view: "home" | "shop" | "product" | "order" | "page"; page?: string; product?: "card" | "stand" | "instapay"; params: URLSearchParams; section?: string };
 
 export function parseHash(hash: string): Route {
   const h = hash.replace(/^#/, "");
   const params = new URLSearchParams();
   if (h === "store") return { view: "shop", params };
   if (h === "order") return { view: "order", params };
+  if (PAGES.includes(h)) return { view: "page", page: h, params };
   const m = h.match(/^(card|stand|instapay)(?:-(basic|plus))?(?:-([a-z]+))?$/);
   if (m) {
     if (m[2]) params.set("plan", m[2]);

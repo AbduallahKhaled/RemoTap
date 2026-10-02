@@ -52,10 +52,11 @@ export function Header() {
 
   const nav = [
     { href: "/shop", label: t("nav.shop") },
-    { href: "/#how", label: t("nav.how") },
-    { href: "/#pricing", label: t("nav.pricing") },
-    { href: "/#demo", label: t("nav.demo") },
-    { href: "/#faq", label: t("nav.faq") },
+    { href: "/stands", label: t("nav.stands") },
+    { href: "/how", label: t("nav.how") },
+    { href: "/pricing", label: t("nav.pricing") },
+    { href: "/demo", label: t("nav.demo") },
+    { href: "/faq", label: t("nav.faq") },
   ];
 
   return (
@@ -232,7 +233,7 @@ export function Footer() {
           <ul className="space-y-3 text-sm text-white/75">
             <li><NavLink href="/product/card" className="hover:text-white">{t("prod.card")}</NavLink></li>
             <li><NavLink href="/product/stand" className="hover:text-white">{t("prod.stand")}</NavLink></li>
-            <li><NavLink href="/#stands" className="hover:text-white">{t("st.eyebrow")}</NavLink></li>
+            <li><NavLink href="/stands" className="hover:text-white">{t("st.eyebrow")}</NavLink></li>
             <li><NavLink href="/product/instapay" className="hover:text-white">{t("prod.instapay")}</NavLink></li>
             <li><NavLink href="/shop" className="hover:text-white">{t("shop.page")}</NavLink></li>
           </ul>
@@ -240,9 +241,12 @@ export function Footer() {
         <div>
           <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/40">{t("foot.help")}</h3>
           <ul className="space-y-3 text-sm text-white/75">
-            <li><NavLink href="/#how" className="hover:text-white">{t("nav.how")}</NavLink></li>
-            <li><NavLink href="/#faq" className="hover:text-white">{t("nav.faq")}</NavLink></li>
-            <li><NavLink href="/p/demo" className="hover:text-white">{t("nav.demo")}</NavLink></li>
+            <li><NavLink href="/how" className="hover:text-white">{t("nav.how")}</NavLink></li>
+            <li><NavLink href="/faq" className="hover:text-white">{t("nav.faq")}</NavLink></li>
+            <li><NavLink href="/demo" className="hover:text-white">{t("nav.demo")}</NavLink></li>
+            <li><NavLink href="/pricing" className="hover:text-white">{t("nav.pricing")}</NavLink></li>
+            <li><NavLink href="/why" className="hover:text-white">{t("cmp.eyebrow")}</NavLink></li>
+            <li><NavLink href="/for" className="hover:text-white">{t("aud.eyebrow")}</NavLink></li>
           </ul>
         </div>
         <div>
