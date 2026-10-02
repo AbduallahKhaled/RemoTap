@@ -1,0 +1,32 @@
+{
+  "_readme": "Edit this file to change prices, contact numbers and delivery fee. The website and the order system both read it.",
+  "brand": "RemoTap",
+  "domain": "remotap.com",
+  "whatsapp": "201000000000",
+  "instapay_handle": "remotap@instapay",
+  "instapay_number": "01000000000",
+  "instapay_link": "",
+  "currency": "EGP",
+  "delivery_fee": 60,
+  "delivery_areas": [
+    "cairo",
+    "giza"
+  ],
+  "production_days": "4-7",
+  "plus_renewal_per_year": 250,
+  "products": {
+    "card": {
+      "basic": 200,
+      "plus": 400
+    },
+    "stand": {
+      "basic": 350,
+      "plus": 550
+    },
+    "instapay": {
+      "basic": 200
+    }
+  },
+  "max_quantity": 20,
+  "_products_note": "instapay = the InstaPay tap card (one plan only). Remove a product here to hide it from the store."
+}

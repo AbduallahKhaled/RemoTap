@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* RemoTap brand tokens. The site is always dark, like the product. */
+:root {
+  --ink: #00000e;
+  --ink-2: #07071a;
+  --ink-3: #0e0e24;
+  --line: rgba(255, 255, 255, 0.1);
+  --purple: #8c52ff;
+  --blue: #3776ff;
+  --cyan: #2fd6f5;
+  --grad: linear-gradient(100deg, #8c52ff 0%, #3776ff 100%);
+  --grad-rev: linear-gradient(100deg, #3776ff 0%, #2fd6f5 100%);
+
+  /* shadcn tokens */
+  --background: var(--ink);
+  --foreground: #f4f3ff;
+  --card: var(--ink-2);
+  --card-foreground: #f4f3ff;
+  --popover: var(--ink-2);
+  --popover-foreground: #f4f3ff;
+  --primary: var(--purple);
+  --primary-foreground: #ffffff;
+  --secondary: #16163a;
+  --secondary-foreground: #f4f3ff;
+  --muted: #121230;
+  --muted-foreground: #a3a3c2;
+  --accent: #1a1a44;
+  --accent-foreground: #ffffff;
+  --destructive: #ff5470;
+  --border: var(--line);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: var(--blue);
+  --radius: 0.9rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-brand-purple: var(--purple);
+  --color-brand-blue: var(--blue);
+  --color-brand-cyan: var(--cyan);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  /* Michroma stands in for Lastica, which is not a free web font. */
+  --font-display: "Lastica", "Michroma", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Sora", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --animate-marquee: marquee var(--mq-dur, 32s) linear infinite;
+}
+
+/* To use the real Lastica brand font: add an @font-face for "Lastica" here (see SETUP.md). */
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  [dir="rtl"] body { font-family: "Cairo", var(--font-sans); }
+  [dir="rtl"] .font-display { font-family: "Cairo", var(--font-display); font-weight: 800; letter-spacing: 0; }
+  ::selection { background: var(--purple); color: #fff; }
+}
+
+/* Gradient text */
+.text-grad {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.85);
+}
+
+/* Marquee: RTL pages scroll the other way */
+
+/* Shiny CTA (primary buttons): dark pill, a light that runs around the border, dotted shimmer on hover.
+   Adapted from the ShinyButton component in components/ui/shiny-button.tsx, in brand colours. */
+@property --gradient-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@property --gradient-angle-offset { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@property --gradient-percent { syntax: "<percentage>"; initial-value: 5%; inherits: false; }
+@property --gradient-shine { syntax: "<color>"; initial-value: white; inherits: false; }
+
+.shiny-cta {
+  --shiny-cta-bg: #0b0b24;
+  --shiny-cta-bg-subtle: #22224a;
+  --shiny-cta-highlight: #8c52ff;
+  --shiny-cta-highlight-subtle: #3776ff;
+  --animation: gradient-angle linear infinite;
+  --duration: 3s;
+  --shadow-size: 2px;
+  --transition: 800ms cubic-bezier(0.25, 1, 0.5, 1);
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--shiny-cta-bg), var(--shiny-cta-bg)) padding-box,
+    conic-gradient(
+      from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
+      transparent,
+      var(--shiny-cta-highlight) var(--gradient-percent),
+      var(--gradient-shine) calc(var(--gradient-percent) * 2),
+      var(--shiny-cta-highlight) calc(var(--gradient-percent) * 3),
+      transparent calc(var(--gradient-percent) * 4)
+    ) border-box;
+  box-shadow: inset 0 0 0 1px var(--shiny-cta-bg-subtle), 0 10px 40px -14px rgba(140, 82, 255, 0.8);
+  transition: var(--transition);
+  transition-property: --gradient-angle-offset, --gradient-percent, --gradient-shine, box-shadow, translate;
+}
+.shiny-cta::before,
+.shiny-cta::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  translate: -50% -50%;
+  z-index: -1;
+}
+/* dots */
+.shiny-cta::before {
+  --size: calc(100% - var(--shadow-size) * 3);
+  --position: 2px;
+  --space: calc(var(--position) * 2);
+  width: var(--size);
+  height: var(--size);
+  background: radial-gradient(circle at var(--position) var(--position), white calc(var(--position) / 4), transparent 0) padding-box;
+  background-size: var(--space) var(--space);
+  background-repeat: space;
+  mask-image: conic-gradient(from calc(var(--gradient-angle) + 45deg), black, transparent 10% 90%, black);
+  border-radius: inherit;
+  opacity: 0.4;
+}
+/* inner shimmer */
+.shiny-cta::after {
+  --animation: shimmer linear infinite;
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(-50deg, transparent, var(--shiny-cta-highlight), transparent);
+  mask-image: radial-gradient(circle at bottom, transparent 40%, black);
+  opacity: 0.6;
+}
+.shiny-cta,
+.shiny-cta::before,
+.shiny-cta::after {
+  animation: var(--animation) var(--duration), var(--animation) calc(var(--duration) / 0.4) reverse paused;
+  animation-composition: add;
+}
+.shiny-cta:is(:hover, :focus-visible) {
+  --gradient-percent: 20%;
+  --gradient-angle-offset: 95deg;
+  --gradient-shine: var(--shiny-cta-highlight-subtle);
+  box-shadow: inset 0 -1ex 2rem 2px rgba(140, 82, 255, 0.55), 0 14px 50px -10px rgba(55, 118, 255, 0.8);
+}
+.shiny-cta:is(:hover, :focus-visible),
+.shiny-cta:is(:hover, :focus-visible)::before,
+.shiny-cta:is(:hover, :focus-visible)::after { animation-play-state: running; }
+.shiny-cta.is-tapped { box-shadow: inset 0 0 0 40px rgba(47, 214, 245, 0.18), 0 14px 50px -10px rgba(47, 214, 245, 0.8); }
+@keyframes gradient-angle { to { --gradient-angle: 360deg; } }
+@keyframes shimmer { to { rotate: 360deg; } }
+
+/* "View my resume" look, used on boxes, chips and secondary buttons across the site:
+   a thin brand-gradient border (drawn with a mask so the box keeps its own background) and a soft glow. */
+@layer components {
+.rt-box { position: relative; border-color: transparent !important; box-shadow: 0 0 34px -18px rgba(140, 82, 255, 0.75); }
+.rt-box::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(120deg, #8c52ff, #3776ff);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 0.3s;
+}
+.rt-box:hover::after { opacity: 1; }
+/* gradient icon tile, like the resume button's icon */
+.rt-chip { display: inline-grid; place-items: center; flex: none; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #8c52ff, #3776ff); box-shadow: 0 6px 18px -8px rgba(140, 82, 255, 0.9); }
+}
+
+/* Button tap state: colour change */
+.btn-grad { background: var(--grad); }
+.btn-grad.is-tapped, .btn-grad:active { background: var(--grad-rev); }
+.is-tapped:not(.btn-grad):not(.shiny-cta) { box-shadow: inset 0 0 0 1px var(--cyan); background-color: rgba(47, 214, 245, 0.14); }
+
+/* Tap effect: NFC waves */
+.tap-fx {
+  position: fixed; z-index: 9999; pointer-events: none;
+  width: 64px; height: 64px; margin: -32px 0 0 -32px;
+  color: var(--cyan);
+  animation: tapPop 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.tap-fx svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px rgba(47, 214, 245, 0.8)); }
+.tap-fx .w1 { animation: wave 0.75s ease-out 0s both; }
+.tap-fx .w2 { animation: wave 0.75s ease-out 0.08s both; }
+.tap-fx .w3 { animation: wave 0.75s ease-out 0.16s both; }
+.tap-ring {
+  position: fixed; z-index: 9998; pointer-events: none;
+  width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
+  border: 2px solid var(--purple);
+  animation: ring 0.7s ease-out forwards;
+}
+@keyframes tapPop {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-38px) scale(1.1); opacity: 0; }
+}
+@keyframes wave { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0.2; } }
+@keyframes ring { to { transform: scale(7); opacity: 0; border-color: var(--blue); } }
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* Hero background grid + glow */
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(70% 60% at 50% 45%, #000 30%, transparent 75%);
+}
+.noise::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+  .shiny-cta, .shiny-cta::before, .shiny-cta::after { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
+@keyframes acc-down { from { height: 0; } to { height: var(--radix-accordion-content-height); } }
+@keyframes acc-up { from { height: var(--radix-accordion-content-height); } to { height: 0; } }

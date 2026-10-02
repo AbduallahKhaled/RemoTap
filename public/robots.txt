@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin.php
+Disallow: /api/
+Disallow: /p/
+Disallow: /data/
+Disallow: /private/
+Sitemap: https://remotap.com/sitemap.xml
