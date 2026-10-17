@@ -6,9 +6,9 @@ import { useStore } from "@/components/providers";
 import { NavLink } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Logo, NfcWaves, Wordmark } from "@/components/site/brand";
+import { Logo, NfcWaves } from "@/components/site/brand";
 import { ProductThumb } from "@/components/site/product-visuals";
-import { itemKey, price } from "@/lib/store";
+import { itemKey, itemPrice, planLabel, plansFor } from "@/lib/store";
 import { lookName } from "@/lib/stands";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,6 @@ export function Header() {
 
   const nav = [
     { href: "/shop", label: t("nav.shop") },
-    { href: "/stands", label: t("nav.stands") },
     { href: "/how", label: t("nav.how") },
     { href: "/pricing", label: t("nav.pricing") },
     { href: "/demo", label: t("nav.demo") },
@@ -61,9 +60,6 @@ export function Header() {
 
   return (
     <>
-      <div className="relative z-50 bg-gradient-to-r from-brand-purple to-brand-blue py-2 text-[12px] font-semibold tracking-wide text-white">
-        <Marquee />
-      </div>
       <header
         className={cn(
           "sticky top-0 z-50 border-b transition-colors duration-300",
@@ -162,12 +158,11 @@ export function CartSheet() {
                         <div>
                           <div className="font-semibold">{t(`prod.${i.product}`)}</div>
                           <div className="text-xs text-white/55">
-                            {i.plan === "plus" ? "Plus" : "Basic"}
-                            {look ? ` · ${look}` : ""}
+                            {[plansFor(config, i.product).length > 1 ? planLabel(i.product, i.plan) : "", look, ...(i.extras ?? []).map((e) => t(`x.${e}`))].filter(Boolean).join(" · ")}
                           </div>
                         </div>
                         <div className="text-sm font-bold whitespace-nowrap">
-                          {money(price(config, i.product, i.plan) * i.qty)} {cur}
+                          {money(itemPrice(config, i) * i.qty)} {cur}
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
@@ -233,8 +228,8 @@ export function Footer() {
           <ul className="space-y-3 text-sm text-white/75">
             <li><NavLink href="/product/card" className="hover:text-white">{t("prod.card")}</NavLink></li>
             <li><NavLink href="/product/stand" className="hover:text-white">{t("prod.stand")}</NavLink></li>
-            <li><NavLink href="/stands" className="hover:text-white">{t("st.eyebrow")}</NavLink></li>
-            <li><NavLink href="/product/instapay" className="hover:text-white">{t("prod.instapay")}</NavLink></li>
+            <li><NavLink href="/shop?type=stands" className="hover:text-white">{t("filter.stands")}</NavLink></li>
+            <li><NavLink href="/shop?type=payment" className="hover:text-white">{t("filter.payment")}</NavLink></li>
             <li><NavLink href="/shop" className="hover:text-white">{t("shop.page")}</NavLink></li>
           </ul>
         </div>
@@ -258,9 +253,6 @@ export function Footer() {
             </a>
           </Button>
         </div>
-      </div>
-      <div className="pointer-events-none select-none px-4 pb-2 text-center leading-none" aria-hidden>
-        <Wordmark className="block text-[17vw] tracking-[0.06em] opacity-[0.07]" mono />
       </div>
       <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/40">{t("foot.rights")}</div>
     </footer>

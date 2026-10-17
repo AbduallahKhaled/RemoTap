@@ -21,7 +21,7 @@ export const PAGES = ["stands", "how", "pricing", "demo", "for", "why", "faq"];
 
 /** "/product/card?plan=plus" -> "#card-plus", "/#faq" -> "#faq" */
 export function toHash(href: string) {
-  if (href.startsWith("/p/")) return href.slice(1) + ".html";
+  if (href.startsWith("/p/")) return href.endsWith(".html") ? href.slice(1) : href.slice(1) + ".html";
   const [path, q = ""] = href.split("?");
   const sp = new URLSearchParams(q);
   const plan = sp.get("plan");

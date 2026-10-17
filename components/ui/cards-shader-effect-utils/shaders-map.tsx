@@ -37,7 +37,7 @@ export type CardDesign = {
   frag: string;
 };
 
-export const CARD_DESIGNS: CardDesign[] = [
+const ALL_DESIGNS: CardDesign[] = [
   {
     id: "midnight",
     name: { en: "Midnight", ar: "ميدنايت" },
@@ -197,6 +197,11 @@ void main() {
   },
 ];
 
+/** Card looks offered on the site, in display order. */
+const OFFERED = ["liquid", "chrome", "holo"];
+export const CARD_DESIGNS: CardDesign[] = OFFERED.map((id) => ALL_DESIGNS.find((d) => d.id === id)!);
+
+
 const VERT = "attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }";
 
 function compile(gl: WebGLRenderingContext, type: number, src: string) {
@@ -220,7 +225,8 @@ export function ShaderCanvas({ design }: { design: CardDesign }) {
     const canvas = ref.current;
     if (!canvas) return;
     const gl = canvas.getContext("webgl", { antialias: false, premultipliedAlpha: false, powerPreference: "low-power" });
-    if (!gl) return;
+    // The same canvas gets the same context back, so a lost context stays lost: keep the CSS gradient instead.
+    if (!gl || gl.isContextLost()) return;
     const vs = compile(gl, gl.VERTEX_SHADER, VERT);
     const fs = compile(gl, gl.FRAGMENT_SHADER, HEADER + design.frag);
     if (!vs || !fs) return;
@@ -256,6 +262,10 @@ export function ShaderCanvas({ design }: { design: CardDesign }) {
       gl.uniform2f(uRes, w, h);
     };
     const draw = () => {
+      if (gl.isContextLost()) {
+        canvas.style.opacity = "0";
+        return;
+      }
       size();
       gl.uniform1f(uTime, (performance.now() - start) / 1000);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -276,7 +286,12 @@ export function ShaderCanvas({ design }: { design: CardDesign }) {
     return () => {
       cancelAnimationFrame(raf);
       io.disconnect();
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      // Free this design's GPU objects but keep the context alive, so the next design can reuse it.
+      // (Calling loseContext() here left a dead context that drew a white card on the next design.)
+      gl.deleteBuffer(buf);
+      gl.deleteProgram(prog);
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
     };
   }, [design]);
 

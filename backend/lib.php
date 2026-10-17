@@ -106,6 +106,21 @@ function rt_taps(string $slug): array {
 }
 
 /* ---------- Links ---------- */
+// Products sold by size (plan basic = small, plus = large) with paid add-ons. Keep in sync with lib/store.ts.
+const RT_SIZED = ['stand', 'coaster'];
+const RT_EXTRAS = ['design', 'page'];
+const RT_SIZES = ['stand' => ['basic' => '10x15 cm', 'plus' => '15x20 cm'], 'coaster' => ['basic' => '9x9 cm', 'plus' => '12x12 cm']];
+
+/** "Basic"/"Plus" for cards, the size for stands and coasters. */
+function rt_plan_label(string $product, string $plan): string {
+    return RT_SIZES[$product][$plan] ?? ucfirst($plan);
+}
+
+/** Does an order line come with a full page of links? */
+function rt_item_has_page(array $i): bool {
+    return in_array($i['product'] ?? '', RT_SIZED, true) ? in_array('page', $i['extras'] ?? [], true) : ($i['plan'] ?? '') === 'plus';
+}
+
 const RT_LINK_TYPES = ['instapay', 'vfcash', 'whatsapp', 'phone', 'email', 'resume', 'instagram', 'linkedin', 'facebook', 'tiktok', 'google', 'website', 'menu'];
 
 function rt_eg_phone(string $v): string {

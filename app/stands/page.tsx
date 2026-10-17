@@ -1,11 +1,17 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import InfoPage from "@/components/site/info-page";
+import ShopClient from "../shop/shop-client";
 
 export const metadata: Metadata = {
-  title: "Stands | RemoTap",
-  description: "Six ready acrylic tap stands: Google review, Instagram, Facebook, InstaPay, Vodafone Cash and Menu. Fully customizable, 350 EGP.",
+  title: "Stand coasters | RemoTap",
+  description: "Ready acrylic stand coasters: Google review, Instagram, Facebook, InstaPay, Vodafone Cash and Menu. Fully customizable.",
 };
 
+/** Old /stands link: the stands now live in the shop, so this opens the shop on the stand coasters filter. */
 export default function Page() {
-  return <InfoPage page="stands" />;
+  return (
+    <Suspense>
+      <ShopClient filter="stands" />
+    </Suspense>
+  );
 }

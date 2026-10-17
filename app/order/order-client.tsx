@@ -9,7 +9,7 @@ import { Qty } from "@/components/site/chrome";
 import { NfcWaves } from "@/components/site/brand";
 import { MiniCard, ProductThumb } from "@/components/site/product-visuals";
 import { lookName, standStyle } from "@/lib/stands";
-import { LINKS, LINK_PH, itemKey, plansFor, type PlanKey, type ProductKey, price } from "@/lib/store";
+import { LINKS, LINK_PH, deliveryFee, extraPrice, hasPage, isSized, itemKey, itemPrice, planLabel, plansFor, type PlanKey, type ProductKey, price } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 type Form = Record<string, string>;
@@ -78,7 +78,7 @@ export default function OrderClient() {
       }
     })();
     if ((p === "card" || p === "stand") && saved.length === 0 && cart.length === 0) {
-      addToCart({ product: p, plan: pl === "basic" ? "basic" : "plus", qty: 1, design: p === "card" ? "midnight" : undefined });
+      addToCart({ product: p, plan: pl === "basic" ? "basic" : "plus", qty: 1, design: p === "card" ? "liquid" : undefined });
     }
     presetDone.current = true;
   }, [qp, cart.length, addToCart]);
@@ -88,19 +88,20 @@ export default function OrderClient() {
     } catch {}
   }, [f]);
 
-  const plan: PlanKey = cart.some((i) => i.plan === "plus") ? "plus" : "basic";
-  const mainProduct: ProductKey = (cart.find((i) => i.plan === plan) ?? cart[0])?.product ?? "card";
+  // "plus" here means: the order gets a full page with all links (a Plus card, or a stand/coaster with the landing page add-on).
+  const plan: PlanKey = cart.some(hasPage) ? "plus" : "basic";
+  const mainProduct: ProductKey = (cart.find(hasPage) ?? cart[0])?.product ?? "card";
   const linkTypes = useMemo(() => {
     const ps = Array.from(new Set([mainProduct, ...cart.map((i) => i.product)]));
     return Array.from(new Set(ps.flatMap((p) => LINKS[p])));
   }, [cart, mainProduct]);
   // Name/title examples: the InstaPay card is for shops, so it uses the stand's.
-  const phProduct = mainProduct === "instapay" ? "stand" : mainProduct;
+  const phProduct = mainProduct === "card" ? "card" : "stand";
   // A ready stand design (Google, Menu…) preselects the link it opens.
   const standLink = cart.find((i) => i.product === "stand" && i.design && i.design !== "remotap")?.design;
   const preType = standLink ? standStyle(standLink).link : "";
   const oneType = f.one_type && linkTypes.includes(f.one_type) ? f.one_type : linkTypes.includes(preType) ? preType : linkTypes[0];
-  const delivery = Number(config.delivery_fee) || 0;
+  const delivery = deliveryFee(config, f.c_area);
   const total = cartTotal + delivery;
   const count = cart.reduce((s, i) => s + i.qty, 0);
 
@@ -124,13 +125,14 @@ export default function OrderClient() {
   };
   const v = (k: string) => (f[k] ?? "").trim();
   /** "Plus"/"Basic", or nothing for a product sold in one plan (the InstaPay card). */
-  const planName = (i: { product: ProductKey; plan: PlanKey }) => (plansFor(config, i.product).length > 1 ? (i.plan === "plus" ? "Plus" : "Basic") : "");
+  const planName = (i: { product: ProductKey; plan: PlanKey }) => (plansFor(config, i.product).length > 1 ? planLabel(i.product, i.plan) : "");
 
   const itemLabel = useCallback(
     (i: (typeof cart)[number]) => {
       const look = lookName(i.product, i.design, "en");
-      const pn = plansFor(config, i.product).length > 1 ? ` ${i.plan === "plus" ? "Plus" : "Basic"}` : "";
-      return `${t(`prod.${i.product}`)}${pn}${look ? ` (${look})` : ""} × ${i.qty}`;
+      const pn = plansFor(config, i.product).length > 1 ? ` ${planLabel(i.product, i.plan)}` : "";
+      const ex = (i.extras ?? []).map((e) => t(`x.${e}`)).join(", ");
+      return `${t(`prod.${i.product}`)}${pn}${look ? ` (${look})` : ""}${ex ? ` + ${ex}` : ""} × ${i.qty}`;
     },
     [t, config],
   );
@@ -186,9 +188,9 @@ export default function OrderClient() {
       fd.set(k, val);
     });
     fd.set("one_type", oneType);
-    fd.set("items", JSON.stringify(cart.map((i) => ({ product: i.product, plan: i.plan, qty: i.qty, design: i.design ?? "" }))));
+    fd.set("items", JSON.stringify(cart.map((i) => ({ product: i.product, plan: i.plan, qty: i.qty, design: i.design ?? "", extras: i.extras ?? [] }))));
     // Kept for the old order format: the main line
-    const main = cart.find((i) => i.plan === plan) ?? cart[0];
+    const main = cart.find(hasPage) ?? cart[0];
     fd.set("product", main.product);
     fd.set("plan", plan);
     fd.set("qty", String(count));
@@ -220,7 +222,7 @@ export default function OrderClient() {
     if (!done) return "";
     let msg = t("p.wamsg2", { id: done.id, items: done.items, total: done.total, name: v("c_name") });
     if (done.offline) {
-      const extra = ["", "—", `${t("o.pname")}: ${v("p_name")}`, `${t("o.print")}: ${v("print_text")}`];
+      const extra = ["", "-----", `${t("o.pname")}: ${v("p_name")}`, `${t("o.print")}: ${v("print_text")}`];
       linkList().forEach(([k, x]) => extra.push(`${t(`o.lt.${k}`)}: ${x}`));
       extra.push(`${t("o.phone")}: ${v("c_phone")}`, `${t("o.address")}: ${t(`o.${v("c_area")}`)}, ${v("c_address")}`);
       if (v("c_notes")) extra.push(`${t("o.notes")}: ${v("c_notes")}`);
@@ -402,10 +404,27 @@ export default function OrderClient() {
                               {t(`prod.${i.product}`)} <span className="text-grad">{planName(i)}</span>
                             </div>
                             <div className="text-xs text-white/50">
-                              {plansFor(config, i.product).length > 1 ? t(`o.${i.plan}.d`) : t(`price.basic.sub.${i.product}`)}
+                              {isSized(i.product)
+                                ? (i.extras ?? []).map((e) => t(`x.${e}`)).join(" · ") || t("o.basic.d")
+                                : plansFor(config, i.product).length > 1
+                                  ? t(`o.${i.plan}.d`)
+                                  : t(`price.basic.sub.${i.product}`)}
                               {look ? ` · ${look}` : ""}
                             </div>
-                            {i.plan === "basic" && plansFor(config, i.product).includes("plus") && (
+                            {!hasPage(i) && isSized(i.product) && (
+                              <button
+                                type="button"
+                                className="mt-2 text-xs font-semibold text-brand-cyan hover:underline"
+                                onClick={() => {
+                                  removeItem(k);
+                                  addToCart({ ...i, extras: [...(i.extras ?? []), "page"] });
+                                }}
+                              >
+                                <Sparkles className="me-1 inline size-3" />
+                                {t("x.page.add")} (+{money(extraPrice(config))} {cur})
+                              </button>
+                            )}
+                            {i.plan === "basic" && !isSized(i.product) && plansFor(config, i.product).includes("plus") && (
                               <button
                                 type="button"
                                 className="mt-2 text-xs font-semibold text-brand-cyan hover:underline"
@@ -421,7 +440,7 @@ export default function OrderClient() {
                           </div>
                           <Qty value={i.qty} onChange={(q) => setQty(k, q)} max={config.max_quantity} />
                           <div className="w-24 text-end font-bold">
-                            {money(price(config, i.product, i.plan) * i.qty)} {cur}
+                            {money(itemPrice(config, i) * i.qty)} {cur}
                           </div>
                           <button type="button" onClick={() => removeItem(k)} className="tap rounded-full p-2 text-white/40 hover:text-white" aria-label={t("cart.remove")}>
                             <Trash2 className="size-4" />
@@ -579,17 +598,20 @@ export default function OrderClient() {
                   </Field>
                   <div>
                     <div className="mb-2 text-sm font-semibold text-white/80">{t("o.area")}</div>
-                    <div className="grid grid-cols-2 gap-2" role="radiogroup">
-                      {["cairo", "giza"].map((a) => (
+                    <div className="grid grid-cols-3 gap-2" role="radiogroup">
+                      {["cairo", "giza", "other"].map((a) => (
                         <button
                           key={a}
                           type="button"
                           role="radio"
                           aria-checked={f.c_area === a}
                           onClick={() => set("c_area", a)}
-                          className={cn("h-12 rounded-xl border text-sm font-semibold transition", f.c_area === a ? "border-brand-purple bg-brand-purple/15" : "border-white/12 text-white/65")}
+                          className={cn("flex min-h-12 flex-col items-center justify-center rounded-xl border px-2 py-2 text-sm font-semibold leading-tight transition", f.c_area === a ? "border-brand-purple bg-brand-purple/15" : "border-white/12 text-white/65")}
                         >
                           {t(`o.${a}`)}
+                          <span className="mt-0.5 text-xs font-normal text-white/55">
+                            {money(deliveryFee(config, a))} {cur}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -653,9 +675,10 @@ export default function OrderClient() {
               {cart.map((i) => (
                 <li key={itemKey(i)} className="flex justify-between gap-3">
                   <span className="text-white/70">
-                    {t(`prod.${i.product}`)} {planName(i)} × {i.qty}
+                    {t(`prod.${i.product}`)} {planName(i)}
+                    {i.extras?.length ? ` + ${i.extras.map((e) => t(`x.${e}`)).join(", ")}` : ""} × {i.qty}
                   </span>
-                  <span className="whitespace-nowrap">{money(price(config, i.product, i.plan) * i.qty)}</span>
+                  <span className="whitespace-nowrap">{money(itemPrice(config, i) * i.qty)}</span>
                 </li>
               ))}
             </ul>

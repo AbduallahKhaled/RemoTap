@@ -3,6 +3,7 @@
 /* Landing sections. The home page shows the short version; each one also has its own page (see info-page.tsx). */
 import { ArrowRight, Check, MessageCircle } from "lucide-react";
 import { useStore } from "@/components/providers";
+import { deliveryFee } from "@/lib/store";
 import { NavLink } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -45,8 +46,8 @@ export function Audience() {
       product: "card" as const,
       visual: (
         <div className="relative grid h-72 place-items-center">
-          <MiniCard design="mesh" className="absolute w-[58%] translate-x-[18%] -translate-y-[10%] rotate-[10deg]" />
-          <MiniCard design="midnight" name="REMOTAP" className="relative w-[62%] -rotate-[6deg]" />
+          <MiniCard design="holo" className="absolute w-[58%] translate-x-[18%] -translate-y-[10%] rotate-[10deg]" />
+          <MiniCard design="liquid" name="REMOTAP" className="relative w-[62%] -rotate-[6deg]" />
         </div>
       ),
     },
@@ -92,7 +93,6 @@ export function How() {
         <div className="grid gap-6 md:grid-cols-3">
           {[1, 2, 3].map((n) => (
             <div key={n} className="reveal rt-box relative overflow-hidden rounded-3xl bg-ink p-8" style={{ transitionDelay: `${n * 80}ms` }}>
-              <div className="pointer-events-none absolute -end-2 -top-6 font-display text-[9rem] leading-none text-white/[0.04]">0{n}</div>
               <div className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-purple to-brand-blue font-display">{n}</div>
               <h3 className="mt-6 font-display text-lg uppercase tracking-wide">{t(`how.s${n}.t`)}</h3>
               <p className="mt-3 text-white/60">{t(`how.s${n}.b`)}</p>
@@ -152,7 +152,8 @@ export function Demo() {
             ))}
           </div>
           <Button asChild size="lg" className="mt-10">
-            <NavLink href="/p/demo">
+            {/* Static demo page (public/p/demo.html): opens with or without the PHP backend. */}
+            <NavLink href="/p/demo.html">
               {t("demo.cta")} <ArrowRight className="rtl:rotate-180" />
             </NavLink>
           </Button>
@@ -166,15 +167,15 @@ export function Demo() {
 }
 
 export function Faq() {
-  const { t } = useStore();
+  const { t, config, money } = useStore();
   return (
     <section id="faq" className="mx-auto max-w-4xl scroll-mt-24 px-4 py-24 sm:px-6">
       <SectionHead eyebrow={t("faq.eyebrow")} title={t("faq.title")} center />
       <Accordion type="single" collapsible className="reveal grid gap-3">
-        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+        {[1, 8, 2, 3, 4, 5, 6, 7].map((n) => (
           <AccordionItem key={n} value={`q${n}`} className="rt-box rounded-2xl border-b-0 bg-[#0b0b26] px-5">
             <AccordionTrigger>{t(`faq.q${n}`)}</AccordionTrigger>
-            <AccordionContent>{t(`faq.a${n}`)}</AccordionContent>
+            <AccordionContent>{t(`faq.a${n}`, { fee: money(deliveryFee(config, "cairo")), fee2: money(deliveryFee(config, "other")) })}</AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
@@ -185,7 +186,7 @@ export function Faq() {
 export function CtaBand() {
   const { t, waLink } = useStore();
   return (
-    <section className="px-4 pb-10 sm:px-6">
+    <section className="px-4 pb-10 pt-20 sm:px-6">
       <div className="reveal noise relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-purple via-[#5b5cff] to-brand-blue px-6 py-20 text-center sm:px-12">
         <div className="pointer-events-none absolute -end-20 -top-20 size-80 rounded-full border-[40px] border-white/10" />
         <div className="pointer-events-none absolute -bottom-24 -start-10 size-72 rounded-full border-[30px] border-white/10" />

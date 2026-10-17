@@ -3,15 +3,13 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Smartphone, QrCode, Truck, RefreshCw } from "lucide-react";
 import { useStore } from "@/components/providers";
-import { price } from "@/lib/store";
 import { NavLink } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import CardsShader from "@/components/ui/cards-shader-effect";
 import { CARD_DESIGNS } from "@/components/ui/cards-shader-effect-utils/shaders-map";
 import { NfcWaves } from "@/components/site/brand";
-import { ProductGrid, SectionHead } from "@/components/site/shop";
+import { ProductGrid, ProductRail, SectionHead } from "@/components/site/shop";
 import { CtaBand } from "@/components/site/sections";
-import { Explore } from "@/components/site/info-page";
 import { cn } from "@/lib/utils";
 
 function useCoarse() {
@@ -23,7 +21,7 @@ function useCoarse() {
 }
 
 function Hero() {
-  const { t, config, money, cur, lang } = useStore();
+  const { t, config, lang } = useStore();
   const [design, setDesign] = useState(0);
   const coarse = useCoarse();
 
@@ -55,21 +53,6 @@ function Hero() {
               <span className="block text-white">{t("hero.big1")}</span>
               <span className="text-outline block">{t("hero.big2")}</span>
               <span className="text-grad block px-[0.06em] py-[0.08em]">{t("hero.big3")}</span>
-            </div>
-            {/* chips sit under the words, never on top of the card */}
-            <div className="mt-6 hidden flex-wrap gap-3 md:flex">
-              <div className="rt-box rounded-2xl bg-ink/60 px-4 py-3 text-sm backdrop-blur-md">
-                <div className="text-xs text-white/50">{t("shop.from")}</div>
-                <div className="font-display text-xl">
-                  {money(price(config, "card", "basic"))} <span className="text-xs text-white/60">{cur}</span>
-                </div>
-              </div>
-              <div className="rt-box flex items-center gap-3 rounded-2xl bg-ink/60 px-4 py-3 text-sm backdrop-blur-md">
-                <span className="rt-chip size-9">
-                  <NfcWaves className="size-5" />
-                </span>
-                <span>{t("trust.1")}</span>
-              </div>
             </div>
           </div>
           {/* the 3D card */}
@@ -109,14 +92,6 @@ function Hero() {
         </div>
 
         <div className="relative mx-auto mt-6 flex max-w-3xl flex-col items-center pb-14 text-center">
-          <NavLink
-            href="/product/instapay"
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-purple/50 bg-brand-purple/15 py-1.5 pe-3 ps-1.5 text-sm font-semibold transition hover:bg-brand-purple/25"
-          >
-            <span className="rounded-full bg-brand-cyan px-2 py-0.5 text-[10px] font-bold uppercase text-ink">{t("tag.new")}</span>
-            {t("hero.new")}
-            <ArrowRight className="size-4 rtl:rotate-180" />
-          </NavLink>
           <p className="text-base text-white/70 sm:text-lg">{t("hero.lead")}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
@@ -125,10 +100,9 @@ function Hero() {
               </NavLink>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <NavLink href="/p/demo">{t("hero.cta2")}</NavLink>
+              <NavLink href="/p/demo.html">{t("hero.cta2")}</NavLink>
             </Button>
           </div>
-          <p className="mt-5 text-sm text-white/45" dangerouslySetInnerHTML={{ __html: t("hero.note") }} />
         </div>
       </div>
     </section>
@@ -159,14 +133,15 @@ function TrustStrip() {
 
 /** Short landing page: only what helps someone buy. Everything else has its own page (Explore). */
 export default function HomeClient() {
-  const { t } = useStore();
+  const { t, config } = useStore();
   return (
     <>
       <Hero />
       <TrustStrip />
+      <ProductRail id="new" title={t("home.new")} items={config.home?.new} />
       <section id="shop" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-20 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <SectionHead eyebrow={t("shop.eyebrow")} title={t("shop.title")} lead={t("shop.lead")} className="mb-12" />
+          <SectionHead title={t("shop.title")} lead={t("shop.lead")} className="mb-12" />
           <Button asChild variant="outline" className="reveal mb-12">
             <NavLink href="/shop">
               {t("shop.page")} <ArrowRight className="rtl:rotate-180" />
@@ -175,7 +150,7 @@ export default function HomeClient() {
         </div>
         <ProductGrid />
       </section>
-      <Explore />
+      <ProductRail id="best" title={t("home.best")} items={config.home?.best} />
       <CtaBand />
     </>
   );

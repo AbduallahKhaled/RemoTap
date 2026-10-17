@@ -2,15 +2,16 @@
   "_readme": "Edit this file to change prices, contact numbers and delivery fee. The website and the order system both read it.",
   "brand": "RemoTap",
   "domain": "remotap.com",
-  "whatsapp": "201000000000",
+  "whatsapp": "201127209609",
   "instapay_handle": "remotap@instapay",
   "instapay_number": "01000000000",
   "instapay_link": "",
   "currency": "EGP",
-  "delivery_fee": 60,
+  "delivery_fee": 65,
   "delivery_areas": [
     "cairo",
-    "giza"
+    "giza",
+    "other"
   ],
   "production_days": "4-7",
   "plus_renewal_per_year": 250,
@@ -21,12 +22,65 @@
     },
     "stand": {
       "basic": 350,
-      "plus": 550
+      "plus": 450
+    },
+    "coaster": {
+      "basic": 220,
+      "plus": 250
     },
     "instapay": {
-      "basic": 200
+      "basic": 150
+    },
+    "vfcash": {
+      "basic": 150
     }
   },
   "max_quantity": 20,
-  "_products_note": "instapay = the InstaPay tap card (one plan only). Remove a product here to hide it from the store."
+  "_products_note": "stand and coaster: basic = small size, plus = large size (stand 10x15 / 15x20 cm, coaster 9x9 / 12x12 cm). extra_price = each add-on (custom design, landing page) on stands and coasters. instapay and vfcash = tap cards (one plan only). Remove a product here to hide it from the store.",
+  "extra_price": 20,
+  "home": {
+    "_note": "Home page rails. product: card | stand | coaster | instapay | vfcash. plan: basic | plus (stand/coaster: small | large size). design: stand design id (google, instagram, facebook, instapay, vfcash, menu, remotap). Edit best sellers to match real orders.",
+    "new": [
+      {
+        "product": "coaster",
+        "plan": "plus"
+      },
+      {
+        "product": "vfcash",
+        "plan": "basic"
+      },
+      {
+        "product": "instapay",
+        "plan": "basic"
+      },
+      {
+        "product": "stand",
+        "plan": "basic",
+        "design": "remotap"
+      }
+    ],
+    "best": [
+      {
+        "product": "card",
+        "plan": "plus"
+      },
+      {
+        "product": "stand",
+        "plan": "basic",
+        "design": "google"
+      },
+      {
+        "product": "stand",
+        "plan": "basic",
+        "design": "menu"
+      },
+      {
+        "product": "stand",
+        "plan": "basic",
+        "design": "instapay"
+      }
+    ]
+  },
+  "delivery_fee_other": 75,
+  "_delivery_note": "delivery_fee = Cairo and Giza. delivery_fee_other = every other governorate in Egypt."
 }

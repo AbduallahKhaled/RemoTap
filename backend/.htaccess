@@ -1,0 +1,56 @@
+# RemoTap — Hostinger (Apache/LiteSpeed)
+Options -Indexes
+DirectoryIndex index.html index.php
+# /shop must not be redirected to /shop/ just because a shop/ folder exists
+DirectorySlash Off
+
+RewriteEngine On
+
+# Force HTTPS (Hostinger gives free SSL; enable it in hPanel first)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Profile pages: /p/slug  ->  p.php?u=slug   (query string such as ?s=n is kept)
+RewriteRule ^p/([A-Za-z0-9_-]{1,64})/?$ p.php?u=$1 [L,QSA]
+
+# Private folders are never served
+RewriteRule ^(data|private)(/|$) - [F,L]
+
+# Store pages from the Next.js export: /shop -> shop.html, /product/card -> product/card.html
+# (the export also makes a folder with the same name, e.g. shop/, so folders must not block this)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+RewriteRule ^(.+?)/?$ $1.html [L]
+
+<FilesMatch "^(lib\.php)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+
+<FilesMatch "^(site-config\.json)$">
+  Header set Cache-Control "no-cache"
+</FilesMatch>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+ErrorDocument 404 /404.html
+
+# Next.js build files have a hash in their name, so they can be cached for a year
+<IfModule mod_headers.c>
+  <If "%{REQUEST_URI} =~ m#^/_next/static/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>

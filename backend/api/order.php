@@ -28,7 +28,7 @@ $qty = max(1, min((int)($_POST['qty'] ?? 1), (int)($site['max_quantity'] ?? 20))
 $c_name = rt_clean($_POST['c_name'] ?? '', 80);
 $c_phone = rt_clean($_POST['c_phone'] ?? '', 20);
 $c_address = rt_clean($_POST['c_address'] ?? '', 300);
-$area = in_array($_POST['c_area'] ?? '', $site['delivery_areas'] ?? ['cairo', 'giza'], true) ? $_POST['c_area'] : '';
+$area = in_array($_POST['c_area'] ?? '', $site['delivery_areas'] ?? ['cairo', 'giza', 'other'], true) ? $_POST['c_area'] : '';
 $p_name = rt_clean($_POST['p_name'] ?? '', 60);
 if ($c_name === '' || $c_address === '' || $p_name === '' || $area === '') fail('missing');
 if (!preg_match('/^(\+?20|0)?1[0125]\d{8}$/', preg_replace('/[\s-]/', '', $c_phone) ?? '')) fail('phone');
@@ -47,7 +47,8 @@ if ($plan === 'basic') {
 if (!$links) fail('links');
 
 $unit = (int)$site['products'][$product][$plan];
-$delivery = (int)($site['delivery_fee'] ?? 0);
+// Cairo and Giza pay delivery_fee; every other governorate pays delivery_fee_other.
+$delivery = (int)($area === 'other' ? ($site['delivery_fee_other'] ?? $site['delivery_fee'] ?? 0) : ($site['delivery_fee'] ?? 0));
 $total = $unit * $qty + $delivery;
 
 // Store checkout: a cart with several lines. Every price is taken from site-config.json, never from the browser.
@@ -60,18 +61,21 @@ if (is_array($raw) && $raw) {
         $ipl = (string)($it['plan'] ?? '');
         if (!isset($site['products'][$ip][$ipl])) fail('product');
         $iq = max(1, min((int)($it['qty'] ?? 1), $max));
+        // Stands and coasters: plan = size, plus paid add-ons (custom design, landing page).
+        $extras = in_array($ip, RT_SIZED, true) ? array_values(array_intersect(RT_EXTRAS, (array)($it['extras'] ?? []))) : [];
         $items[] = [
             'product' => $ip,
             'plan' => $ipl,
             'qty' => $iq,
             'design' => preg_replace('/[^a-z0-9-]/', '', strtolower((string)($it['design'] ?? ''))) ?: '',
-            'unit_price' => (int)$site['products'][$ip][$ipl],
+            'extras' => $extras,
+            'unit_price' => (int)$site['products'][$ip][$ipl] + count($extras) * (int)($site['extra_price'] ?? 20),
         ];
     }
     $qty = array_sum(array_column($items, 'qty'));
     $total = array_sum(array_map(fn($i) => $i['unit_price'] * $i['qty'], $items)) + $delivery;
-    // The page follows the best plan in the cart.
-    $plan = in_array('plus', array_column($items, 'plan'), true) ? 'plus' : 'basic';
+    // The order gets a full page if any line has one: a Plus card, or a stand/coaster with the landing page add-on.
+    $plan = array_filter($items, 'rt_item_has_page') ? 'plus' : 'basic';
     if (!in_array($product, array_column($items, 'product'), true)) $product = $items[0]['product'];
 }
 
@@ -122,7 +126,7 @@ if ($to !== '' && function_exists('mail')) {
     $lines = [
         "New RemoTap order $id",
         $items
-            ? implode("\n", array_map(fn($i) => "{$i['product']} / {$i['plan']}" . ($i['design'] ? " ({$i['design']})" : '') . " x {$i['qty']}", $items)) . "\nTotal $total EGP (incl. $delivery delivery)"
+            ? implode("\n", array_map(fn($i) => $i['product'] . ' / ' . rt_plan_label($i['product'], $i['plan']) . ($i['design'] ? " ({$i['design']})" : '') . ($i['extras'] ? ' + ' . implode(', ', $i['extras']) : '') . " x {$i['qty']}", $items)) . "\nTotal $total EGP (incl. $delivery delivery)"
             : "{$order['product']} / {$order['plan']} x $qty = $total EGP (incl. $delivery delivery)",
         "Customer: $c_name, $c_phone",
         "Address: $area, $c_address",

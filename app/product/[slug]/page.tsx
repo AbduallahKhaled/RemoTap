@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import ProductClient from "./product-client";
-import type { ProductKey } from "@/lib/store";
+import { PRODUCTS, type ProductKey } from "@/lib/store";
 
 export function generateStaticParams() {
-  return [{ slug: "card" }, { slug: "stand" }, { slug: "instapay" }];
+  return PRODUCTS.map((slug) => ({ slug }));
 }
 
 const META: Record<ProductKey, Metadata> = {
@@ -14,11 +14,19 @@ const META: Record<ProductKey, Metadata> = {
   },
   instapay: {
     title: "InstaPay Tap Card | RemoTap",
-    description: "NFC tap card for shops: customers tap their phone and your InstaPay payment opens. 200 EGP, made in Cairo.",
+    description: "NFC tap card for shops: customers tap their phone and your InstaPay payment opens. 150 EGP, made in Cairo.",
+  },
+  vfcash: {
+    title: "Vodafone Cash Tap Card | RemoTap",
+    description: "NFC tap card for shops: customers tap their phone and your Vodafone Cash wallet opens. 150 EGP, made in Cairo.",
+  },
+  coaster: {
+    title: "RemoTap Coaster | NFC table coaster, Cairo",
+    description: "Square acrylic NFC coaster for cafés: one tap opens your menu, Instagram or Google reviews. 9×9 cm 220 EGP, 12×12 cm 250 EGP.",
   },
   stand: {
     title: "RemoTap Stand | InstaPay tap stand for shops",
-    description: "Counter stand: customers tap to pay with InstaPay, follow you or leave a Google review. Basic 350 EGP, Plus 550 EGP.",
+    description: "Counter stand: customers tap to pay with InstaPay, follow you or leave a Google review. 10×15 cm 350 EGP, 15×20 cm 450 EGP.",
   },
 };
 

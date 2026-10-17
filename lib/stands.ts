@@ -40,7 +40,7 @@ export const STAND_STYLES: StandStyle[] = [
   {
     id: "google",
     link: "google",
-    name: { en: "Google review stand", ar: "ستاند تقييم جوجل" },
+    name: { en: "Google review stand coaster", ar: "ستاند كوستر تقييم جوجل" },
     desc: {
       en: "Customers tap and your Google review page opens with the stars ready. More 5-star reviews, no searching for your shop.",
       ar: "العميل يلمس وتفتح صفحة تقييمك على جوجل والنجوم جاهزة. تقييمات ٥ نجوم أكتر من غير ما يدوّر على محلك.",
@@ -53,7 +53,7 @@ export const STAND_STYLES: StandStyle[] = [
   {
     id: "instagram",
     link: "instagram",
-    name: { en: "Instagram stand", ar: "ستاند إنستجرام" },
+    name: { en: "Instagram stand coaster", ar: "ستاند كوستر إنستجرام" },
     desc: {
       en: "One tap opens your Instagram profile so customers follow you before they leave the counter.",
       ar: "لمسة واحدة تفتح بروفايلك على إنستجرام، فالعميل يتابعك قبل ما يمشي من الكاشير.",
@@ -67,7 +67,7 @@ export const STAND_STYLES: StandStyle[] = [
   {
     id: "facebook",
     link: "facebook",
-    name: { en: "Facebook stand", ar: "ستاند فيسبوك" },
+    name: { en: "Facebook stand coaster", ar: "ستاند كوستر فيسبوك" },
     desc: {
       en: "Opens your Facebook page in one tap: more likes and followers from people already in your shop.",
       ar: "بيفتح صفحتك على فيسبوك بلمسة: لايكات ومتابعين أكتر من الناس اللي في محلك أصلًا.",
@@ -80,7 +80,7 @@ export const STAND_STYLES: StandStyle[] = [
   {
     id: "instapay",
     link: "instapay",
-    name: { en: "InstaPay stand", ar: "ستاند إنستاباي" },
+    name: { en: "InstaPay stand coaster", ar: "ستاند كوستر إنستاباي" },
     desc: {
       en: "Customers tap and your InstaPay payment opens. No reading your number out loud, no wrong transfers.",
       ar: "العميل يلمس ويفتحله الدفع على إنستاباي. من غير ما تملي رقمك ومن غير تحويلات غلط.",
@@ -93,7 +93,7 @@ export const STAND_STYLES: StandStyle[] = [
   {
     id: "vfcash",
     link: "vfcash",
-    name: { en: "Vodafone Cash stand", ar: "ستاند فودافون كاش" },
+    name: { en: "Vodafone Cash stand coaster", ar: "ستاند كوستر فودافون كاش" },
     desc: {
       en: "Shows your Vodafone Cash wallet number with a copy button, so customers send the right amount to the right number.",
       ar: "بيعرض رقم محفظة فودافون كاش بتاعتك بزرار نسخ، فالعميل يحوّل على الرقم الصح.",
@@ -107,7 +107,7 @@ export const STAND_STYLES: StandStyle[] = [
   {
     id: "menu",
     link: "menu",
-    name: { en: "Menu stand", ar: "ستاند المنيو" },
+    name: { en: "Menu stand coaster", ar: "ستاند كوستر المنيو" },
     desc: {
       en: "For cafés and restaurants: one tap on the table opens your menu or online ordering link.",
       ar: "للكافيهات والمطاعم: لمسة على الترابيزة تفتح المنيو أو لينك الطلب أونلاين.",

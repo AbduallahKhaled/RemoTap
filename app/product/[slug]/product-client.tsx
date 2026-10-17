@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import CardsShader from "@/components/ui/cards-shader-effect";
 import { CARD_DESIGNS } from "@/components/ui/cards-shader-effect-utils/shaders-map";
 import { NfcWaves } from "@/components/site/brand";
-import { InstaPayCard, StandPlate, StandVisual } from "@/components/site/product-visuals";
+import { CoasterPlate, StandPlate, StandVisual, TapCardPhoto } from "@/components/site/product-visuals";
 import { STAND_STYLES, standStyle } from "@/lib/stands";
 import { ProductTile } from "@/components/site/shop";
 import { Qty } from "@/components/site/chrome";
-import { FEATURES, PRODUCTS, plansFor, price, type PlanKey, type ProductKey } from "@/lib/store";
+import { EXTRAS, FEATURES, deliveryFee, PRODUCTS, extraPrice, isSized, itemPrice, planLabel, plansFor, price, type ExtraKey, type PlanKey, type ProductKey } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function ProductClient({ product }: { product: ProductKey }) {
@@ -25,6 +25,8 @@ export default function ProductClient({ product }: { product: ProductKey }) {
   const [design, setDesign] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [style, setStyle] = useState("remotap");
+  const [extras, setExtras] = useState<ExtraKey[]>([]);
+  const sized = isSized(product);
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
@@ -38,9 +40,16 @@ export default function ProductClient({ product }: { product: ProductKey }) {
 
   // A product sold in one plan only (the InstaPay card) always uses that plan.
   const plan: PlanKey = plans.includes(wantPlan) ? wantPlan : (plans[0] ?? "basic");
-  const item = { product, plan, qty, design: product === "card" ? CARD_DESIGNS[design].id : product === "stand" ? style : undefined };
+  const item = {
+    product,
+    plan,
+    qty,
+    design: product === "card" ? CARD_DESIGNS[design].id : product === "stand" ? style : undefined,
+    extras: sized ? EXTRAS.filter((e) => extras.includes(e)) : undefined,
+  };
   const st = standStyle(style);
-  const unit = price(config, product, plan);
+  const unit = itemPrice(config, item);
+  const toggleExtra = (e: ExtraKey) => setExtras((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
   const others = PRODUCTS.filter((p) => p !== product && plansFor(config, p).length > 0);
 
   const add = () => {
@@ -79,9 +88,18 @@ export default function ProductClient({ product }: { product: ProductKey }) {
               />
             )}
             {product === "stand" && <StandVisual className="absolute inset-0" design={style} />}
-            {product === "instapay" && <InstaPayCard className="absolute inset-0" flipped={flipped} />}
+            {product === "coaster" && (
+              <div className="absolute inset-0 grid place-items-center">
+                <CoasterPlate className={cn("shadow-[0_40px_80px_-30px_rgba(0,0,0,.9)] transition-[width] duration-500", plan === "plus" ? "w-[62%]" : "w-[48%]")} />
+              </div>
+            )}
+            {(product === "instapay" || product === "vfcash") && (
+              <div className="absolute inset-0 grid place-items-center">
+                <TapCardPhoto product={product} className="h-[86%] w-auto" />
+              </div>
+            )}
           </div>
-          {product !== "stand" && (
+          {product === "card" && (
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setFlipped((f) => !f)} aria-pressed={flipped}>
                 <RotateCw /> {t("prod.flip")}
@@ -93,6 +111,12 @@ export default function ProductClient({ product }: { product: ProductKey }) {
               )}
             </div>
           )}
+          {/* RemoTap-branded photos are samples: the real stand or coaster is printed with the customer's own brand. */}
+          {(product === "coaster" || (product === "stand" && style === "remotap")) && (
+            <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-white/60">
+              <Palette className="size-4 shrink-0 text-brand-cyan" /> {t("prod.sample")}
+            </p>
+          )}
         </div>
 
         {/* details */}
@@ -100,7 +124,7 @@ export default function ProductClient({ product }: { product: ProductKey }) {
           <div className="text-xs font-bold uppercase tracking-[0.25em] text-brand-cyan">{t("hero.store")}</div>
           <h1 className="mt-3 font-display text-4xl uppercase leading-tight tracking-wide sm:text-5xl">{product === "stand" && style !== "remotap" ? st.name[lang] : t(`prod.${product}`)}</h1>
           <p className="mt-4 text-lg text-white/65">{product === "stand" ? st.desc[lang] : t(`prod.${product}.short`)}</p>
-          {product === "stand" && (
+          {(product === "stand" || product === "coaster") && (
             <span className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-purple/50 bg-brand-purple/15 px-3 py-1.5 text-xs font-semibold">
               <Palette className="size-3.5 text-brand-cyan" /> {t("tag.custom")}
             </span>
@@ -110,13 +134,13 @@ export default function ProductClient({ product }: { product: ProductKey }) {
             <span className="pb-1 text-sm font-semibold text-white/60">{cur}</span>
           </div>
           <p className="mt-2 flex items-center gap-2 text-sm text-white/55">
-            <Truck className="size-4 text-brand-cyan" /> {t("prod.delfee", { fee: money(Number(config.delivery_fee) || 0) })}
+            <Truck className="size-4 text-brand-cyan" /> {t("prod.delfee", { fee: money(deliveryFee(config, "cairo")), fee2: money(deliveryFee(config, "other")) })}
           </p>
 
           {/* plan */}
           {plans.length > 1 && (
             <fieldset className="mt-8">
-              <legend className="mb-3 text-sm font-bold uppercase tracking-wider text-white/60">{t("prod.plan")}</legend>
+              <legend className="mb-3 text-sm font-bold uppercase tracking-wider text-white/60">{t(sized ? "prod.size" : "prod.plan")}</legend>
               <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
                 {plans.map((p) => (
                   <button
@@ -133,22 +157,53 @@ export default function ProductClient({ product }: { product: ProductKey }) {
                       plan === p ? "border-brand-purple bg-brand-purple/10 ring-1 ring-brand-purple" : "border-white/12 hover:border-white/30",
                     )}
                   >
-                    {p === "plus" && (
+                    {p === "plus" && !sized && (
                       <span className="absolute -top-2.5 end-3 rounded-full bg-brand-cyan px-2 py-0.5 text-[10px] font-bold uppercase text-ink">{t("tag.best")}</span>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="font-display text-sm uppercase tracking-wide">{p === "plus" ? "Plus" : "Basic"}</span>
+                      <span className="font-display text-sm uppercase tracking-wide" dir="ltr">{planLabel(product, p)}</span>
                       <span className="font-bold">
                         {money(price(config, product, p))} <span className="text-xs text-white/55">{cur}</span>
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-white/55">{t(`o.${p}.d`)}</p>
+                    <p className="mt-2 text-xs text-white/55">{sized ? t(`size.${product}.${p}`) : t(`o.${p}.d`)}</p>
                   </button>
                 ))}
               </div>
               <p className="mt-3 flex gap-2 text-xs text-white/50">
-                <Info className="mt-0.5 size-3.5 shrink-0" /> {t("plan.help")}
+                <Info className="mt-0.5 size-3.5 shrink-0" /> {t(sized ? "size.help" : "plan.help")}
               </p>
+            </fieldset>
+          )}
+
+          {sized && (
+            <fieldset className="mt-7">
+              <legend className="mb-3 text-sm font-bold uppercase tracking-wider text-white/60">{t("x.title")}</legend>
+              <div className="grid gap-3">
+                {EXTRAS.map((e) => {
+                  const on = extras.includes(e);
+                  return (
+                    <label
+                      key={e}
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition",
+                        on ? "border-brand-purple bg-brand-purple/10 ring-1 ring-brand-purple" : "border-white/12 hover:border-white/30",
+                      )}
+                    >
+                      <input type="checkbox" checked={on} onChange={() => toggleExtra(e)} className="mt-1 size-4 shrink-0 accent-[#8c52ff]" />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-3 font-semibold">
+                          {t(`x.${e}`)}
+                          <span className="whitespace-nowrap text-sm">
+                            +{money(extraPrice(config))} <span className="text-xs text-white/55">{cur}</span>
+                          </span>
+                        </span>
+                        <span className="mt-1 block text-xs text-white/55">{t(`x.${e}.d`)}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
             </fieldset>
           )}
 
@@ -252,7 +307,7 @@ export default function ProductClient({ product }: { product: ProductKey }) {
         <div className="flex items-center gap-3 pe-16">
           <div className="min-w-0">
             <div className="truncate text-xs text-white/55">
-              {t(`prod.${product}`)} {plans.length > 1 ? (plan === "plus" ? "Plus" : "Basic") : ""}
+              {t(`prod.${product}`)} {plans.length > 1 ? planLabel(product, plan) : ""}
             </div>
             <div className="font-display text-lg">
               {money(unit * qty)} <span className="text-xs text-white/60">{cur}</span>

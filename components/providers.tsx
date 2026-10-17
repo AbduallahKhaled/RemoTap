@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { DICT, type Lang } from "@/lib/dict";
 import { asset } from "@/lib/nav";
-import { FALLBACK_CONFIG, itemKey, type CartItem, type SiteConfig, price } from "@/lib/store";
+import { FALLBACK_CONFIG, itemKey, itemPrice, type CartItem, type SiteConfig } from "@/lib/store";
 
 type Ctx = {
   lang: Lang;
@@ -173,7 +173,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => setCart([]), []);
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const cartTotal = cart.reduce((s, i) => s + i.qty * price(config, i.product, i.plan), 0);
+  const cartTotal = cart.reduce((s, i) => s + i.qty * itemPrice(config, i), 0);
 
   const value = useMemo<Ctx>(
     () => ({

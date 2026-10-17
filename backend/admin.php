@@ -302,7 +302,7 @@ else:
           <span class="st st-<?= h($o['status']) ?>"><?= h(STATUSES[$o['status']] ?? $o['status']) ?></span>
           <b class="ltr"><?= h($o['id']) ?></b>
           <span><?= h($c['name']) ?></span>
-          <span class="muted"><?php if (!empty($o['items'])): ?><?= h(implode(' + ', array_map(fn($i) => ucfirst($i['product']) . ' ' . ucfirst($i['plan']) . ' × ' . (int)$i['qty'], $o['items']))) ?><?php else: ?><?= h(ucfirst($o['product'])) ?> · <?= h(ucfirst($o['plan'])) ?> × <?= (int)$o['qty'] ?><?php endif; ?></span>
+          <span class="muted"><?php if (!empty($o['items'])): ?><?= h(implode(' + ', array_map(fn($i) => ucfirst($i['product']) . ' ' . rt_plan_label($i['product'], $i['plan']) . (!empty($i['extras']) ? ' + ' . implode(', ', $i['extras']) : '') . ' × ' . (int)$i['qty'], $o['items']))) ?><?php else: ?><?= h(ucfirst($o['product'])) ?> · <?= h(ucfirst($o['plan'])) ?> × <?= (int)$o['qty'] ?><?php endif; ?></span>
           <b class="amt"><?= number_format((int)$o['total']) ?> EGP</b>
         </summary>
         <div class="grid2 inner">
@@ -314,7 +314,7 @@ else:
             <?php if ($c['notes']): ?><p><span class="muted">Notes</span> <?= h($c['notes']) ?></p><?php endif; ?>
             <p><span class="muted">Came from</span> <?= h($o['source'] ?? 'direct') ?></p>
             <?php if (!empty($o['items'])): ?>
-              <?php foreach ($o['items'] as $i): ?><p><span class="muted"><?= h(ucfirst($i['product']) . ' ' . ucfirst($i['plan'])) ?><?= $i['design'] ? ' · look: ' . h($i['design']) : '' ?></span> <?= (int)$i['unit_price'] ?> × <?= (int)$i['qty'] ?></p><?php endforeach; ?>
+              <?php foreach ($o['items'] as $i): ?><p><span class="muted"><?= h(ucfirst($i['product']) . ' ' . rt_plan_label($i['product'], $i['plan'])) ?><?= $i['design'] ? ' · look: ' . h($i['design']) : '' ?><?= !empty($i['extras']) ? ' · add-ons: ' . h(implode(', ', $i['extras'])) : '' ?></span> <?= (int)$i['unit_price'] ?> × <?= (int)$i['qty'] ?></p><?php endforeach; ?>
               <p><span class="muted">Delivery</span> <?= (int)$o['delivery_fee'] ?></p>
             <?php else: ?>
             <p><span class="muted">Price</span> <?= (int)$o['unit_price'] ?> × <?= (int)$o['qty'] ?> + <?= (int)$o['delivery_fee'] ?> delivery</p>

@@ -11,7 +11,7 @@ import { Star, Utensils, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Static mini card (CSS version of a design): for grids, cart rows and thumbnails. */
-export function MiniCard({ design = "midnight", name, className, style }: { design?: string; name?: string; className?: string; style?: React.CSSProperties }) {
+export function MiniCard({ design = "liquid", name, className, style }: { design?: string; name?: string; className?: string; style?: React.CSSProperties }) {
   const d = CARD_DESIGNS.find((x) => x.id === design) ?? CARD_DESIGNS[0];
   const light = d.id === "chrome";
   return (
@@ -107,6 +107,70 @@ function PanelIcon({ id }: { id: string }) {
   );
 }
 
+/** Real product photos (white background). Stand designs without a photo are drawn in CSS. */
+const STAND_PHOTOS: Record<string, string> = {
+  remotap: "/assets/img/products/stand-remotap.webp",
+  google: "/assets/img/products/stand-google.webp",
+  instagram: "/assets/img/products/stand-instagram.webp",
+  facebook: "/assets/img/products/stand-facebook.webp",
+  instapay: "/assets/img/products/stand-instapay.webp",
+  vfcash: "/assets/img/products/stand-vfcash.webp",
+  menu: "/assets/img/products/stand-menu.webp",
+};
+export const standPhoto = (design?: string) => (design ? STAND_PHOTOS[design] : undefined);
+const CARD_PHOTOS: Partial<Record<ProductKey, string>> = {
+  instapay: "/assets/img/products/card-instapay.webp",
+  vfcash: "/assets/img/products/card-vfcash.webp",
+};
+
+/** Photo of a tap card (InstaPay, Vodafone Cash), cropped to the card edges: portrait, about 0.66 wide per 1 high. Size it by height. */
+export function TapCardPhoto({ product, className }: { product: ProductKey; className?: string }) {
+  const src = CARD_PHOTOS[product];
+  if (!src) return null;
+  return (
+    <div className={cn("relative aspect-[0.66] overflow-hidden rounded-[6%/4%] border border-white/15 shadow-[0_24px_50px_-18px_rgba(0,0,0,.9)]", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={asset(src)} alt="" width={900} height={1360} loading="lazy" className="size-full object-cover" />
+    </div>
+  );
+}
+
+/** Square photo on a white tile (product shots have a white background). */
+function PhotoTile({ src, className }: { src: string; className?: string }) {
+  return (
+    <div className={cn("relative aspect-square select-none overflow-hidden rounded-[8%] bg-white", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={asset(src)} alt="" width={1254} height={1254} loading="lazy" className="size-full object-contain" />
+    </div>
+  );
+}
+
+/** Square acrylic coaster (9×9 or 12×12 cm). */
+export function CoasterPlate({ className }: { className?: string }) {
+  return <PhotoTile src="/assets/img/products/coaster-remotap.webp" className={className} />;
+}
+
+/**
+ * Photo of the black RemoTap card, used on the shop tile. The photo is 1254×1254 with the card at
+ * x 272-986, y 397-851, so it is cropped to just the card (no white background on the dark tile).
+ */
+export function CardPhoto({ className }: { className?: string }) {
+  return (
+    <div className={cn("relative aspect-[714/454] select-none overflow-hidden rounded-[3.5%/5.5%] border border-white/15", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={asset("/assets/img/products/card-remotap.webp")}
+        alt=""
+        width={1254}
+        height={1254}
+        loading="lazy"
+        className="absolute max-w-none"
+        style={{ width: `${(1254 / 714) * 100}%`, left: `${(-272 / 714) * 100}%`, top: `${(-397 / 454) * 100}%` }}
+      />
+    </div>
+  );
+}
+
 /**
  * Flat, square acrylic tap stand (like the ones on shop counters):
  * white side with the tap sign and QR, coloured side with the design.
@@ -114,6 +178,8 @@ function PanelIcon({ id }: { id: string }) {
  */
 export function StandPlate({ design, className }: { design?: string; className?: string }) {
   const s = standStyle(design);
+  const photo = standPhoto(design);
+  if (photo) return <PhotoTile src={photo} className={className} />;
   return (
     <div className={cn("@container relative aspect-square select-none overflow-hidden rounded-[8%] bg-white text-[#141420]", className)} dir="ltr">
       {s.accent && <div className="absolute inset-0" style={maskStyle({ background: s.accent, transform: "translateX(-2.2cqw)" })} />}
@@ -158,9 +224,10 @@ export function StandPlate({ design, className }: { design?: string; className?:
 export function StandVisual({ className, interactive = true, design }: { className?: string; interactive?: boolean; design?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
+  const photo = standPhoto(design);
 
   useEffect(() => {
-    if (!interactive) return;
+    if (!interactive || photo) return;
     const el = ref.current;
     const it = inner.current;
     if (!el || !it) return;
@@ -192,7 +259,15 @@ export function StandVisual({ className, interactive = true, design }: { classNa
       el.removeEventListener("pointermove", move);
       cancelAnimationFrame(raf);
     };
-  }, [interactive]);
+  }, [interactive, photo]);
+
+  // A real photo is shown flat: it already has its own depth and shadow.
+  if (photo)
+    return (
+      <div className={cn("relative grid place-items-center", className)}>
+        <StandPlate design={design} className="w-[min(78%,420px)] shadow-[0_40px_80px_-30px_rgba(0,0,0,.9)]" />
+      </div>
+    );
 
   return (
     <div ref={ref} className={cn("relative grid place-items-center", className)} style={{ perspective: 1200 }}>
@@ -225,9 +300,11 @@ export function ProductThumb({ product, design, className }: { product: ProductK
   return (
     <div className={cn("relative grid place-items-center overflow-hidden bg-gradient-to-br from-[#16163a] to-ink-2", className)}>
       {product === "card" ? (
-        <MiniCard design={design ?? "midnight"} className="w-[78%] -rotate-6" />
-      ) : product === "instapay" ? (
-        <MiniInstaPay className="h-[84%] rotate-6" />
+        <MiniCard design={design ?? "liquid"} className="w-[78%] -rotate-6" />
+      ) : product === "instapay" || product === "vfcash" ? (
+        <TapCardPhoto product={product} className="h-[88%] w-auto rotate-6" />
+      ) : product === "coaster" ? (
+        <CoasterPlate className="w-[64%] -rotate-3 shadow-[0_12px_30px_-10px_rgba(0,0,0,.8)]" />
       ) : (
         <StandPlate design={design} className="w-[72%] -rotate-3 shadow-[0_12px_30px_-10px_rgba(0,0,0,.8)]" />
       )}
