@@ -4,16 +4,19 @@ import { Providers } from "@/components/providers";
 import { Header, Footer, WhatsAppFloat } from "@/components/site/chrome";
 import { RevealObserver } from "@/components/site/reveal";
 
-const SITE = "https://remotap.com";
+import siteConfig from "@/public/site-config.json";
+
+/** Public address of the live site, set at build time by `npm run package -- --domain=...`. */
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: "RemoTap | NFC cards & tap stands store, Cairo",
+  title: "RemoTap | NFC cards & tap stands store, Egypt",
   description:
-    "NFC business cards and InstaPay tap stands made to order in Cairo & Giza. One tap opens your page, InstaPay, WhatsApp and Google reviews. From 200 EGP.",
+    "NFC business cards, stands, coasters and InstaPay / Vodafone Cash tap cards, made to order in Cairo and delivered all over Egypt. One tap opens your page, payment, WhatsApp and Google reviews.",
   openGraph: {
     title: "RemoTap | Tap. Connect. Grow.",
-    description: "NFC cards & stands made to order in Cairo & Giza. From 200 EGP, pay with InstaPay.",
+    description: "NFC cards, stands and payment tap cards, made in Cairo and delivered all over Egypt.",
     url: SITE,
     siteName: "RemoTap",
     images: [{ url: "/assets/img/og.jpg", width: 1200, height: 630 }],
@@ -30,23 +33,34 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#00000E", width: "device-width", initialScale: 1 };
 
+// Offers for search engines come from the same price file the store reads, so they never go stale.
+const OFFER_NAMES: Record<string, Record<string, string>> = {
+  card: { basic: "RemoTap Card Basic", plus: "RemoTap Card Plus" },
+  stand: { basic: "RemoTap Stand 10x15 cm", plus: "RemoTap Stand 15x20 cm" },
+  coaster: { basic: "RemoTap Coaster 9x9 cm", plus: "RemoTap Coaster 12x12 cm" },
+  instapay: { basic: "InstaPay Tap Card" },
+  vfcash: { basic: "Vodafone Cash Tap Card" },
+};
+const offers = Object.entries(siteConfig.products as Record<string, Record<string, number>>).flatMap(([product, plans]) =>
+  Object.entries(plans).map(([plan, price]) => ({
+    "@type": "Offer",
+    name: OFFER_NAMES[product]?.[plan] ?? `RemoTap ${product} ${plan}`,
+    price,
+    priceCurrency: "EGP",
+  })),
+);
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Store",
   name: "RemoTap",
   url: SITE,
   image: `${SITE}/assets/img/og.jpg`,
-  description: "NFC business cards and tap stands, made to order in Cairo & Giza.",
-  areaServed: ["Cairo", "Giza"],
+  description: "NFC business cards, stands, coasters and payment tap cards, made to order in Cairo and delivered all over Egypt.",
+  areaServed: "EG",
   currenciesAccepted: "EGP",
-  paymentAccepted: "InstaPay",
-  makesOffer: [
-    { "@type": "Offer", name: "RemoTap Card Basic", price: 200, priceCurrency: "EGP" },
-    { "@type": "Offer", name: "RemoTap Card Plus", price: 400, priceCurrency: "EGP" },
-    { "@type": "Offer", name: "RemoTap Stand Basic", price: 350, priceCurrency: "EGP" },
-    { "@type": "Offer", name: "RemoTap Stand Plus", price: 550, priceCurrency: "EGP" },
-    { "@type": "Offer", name: "RemoTap InstaPay Tap Card", price: 200, priceCurrency: "EGP" },
-  ],
+  paymentAccepted: "InstaPay, Vodafone Cash",
+  makesOffer: offers,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

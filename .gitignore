@@ -4,6 +4,7 @@ node_modules/
 out/
 out-preview/
 dist/
+remotap-upload.zip
 *.tsbuildinfo
 next-env.d.ts
 

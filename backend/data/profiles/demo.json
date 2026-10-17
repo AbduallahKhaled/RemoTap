@@ -4,43 +4,27 @@
   "active": true,
   "expires": "",
   "name": "RemoTap",
-  "title": "Smart NFC cards & stands · Cairo & Giza",
+  "title": "Smart NFC cards & stands, delivered all over Egypt",
   "bio": "This is what your customers see when they tap a RemoTap card or stand. Try the buttons.",
   "lang": "both",
   "photo": "uploads/remotap-demo.png",
   "links": [
     {
-      "type": "resume",
-      "value": "remotap.com/sample-cv.pdf"
-    },
-    {
       "type": "whatsapp",
-      "value": "01000000000"
+      "value": "01127209609"
     },
     {
       "type": "instagram",
       "value": "@remotap"
     },
     {
-      "type": "linkedin",
-      "value": "linkedin.com/company/remotap"
-    },
-    {
       "type": "instapay",
-      "value": "remotap@instapay"
-    },
-    {
-      "type": "email",
-      "value": "hello@remotap.com"
-    },
-    {
-      "type": "website",
-      "value": "remotap.com"
+      "value": "yourname@instapay"
     }
   ],
   "primary": {
-    "type": "website",
-    "value": "remotap.com"
+    "type": "whatsapp",
+    "value": "01127209609"
   },
   "order_id": "",
   "created": "2026-09-27"
