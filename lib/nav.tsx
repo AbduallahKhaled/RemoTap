@@ -17,7 +17,7 @@ export const asset = (p: string) => (PREVIEW ? p.replace(/^\//, "") : p);
 
 const SECTIONS = ["shop"];
 /** Detail pages that have their own URL (/how, /faq, ...). Keep in sync with INFO_PAGES. */
-export const PAGES = ["stands", "how", "pricing", "demo", "for", "why", "faq"];
+export const PAGES = ["stands", "how", "pricing", "demo", "for", "why", "faq", "services"];
 
 /** "/product/card?plan=plus" -> "#card-plus", "/#faq" -> "#faq" */
 export function toHash(href: string) {

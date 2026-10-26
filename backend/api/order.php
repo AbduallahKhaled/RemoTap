@@ -33,8 +33,14 @@ $p_name = rt_clean($_POST['p_name'] ?? '', 60);
 if ($c_name === '' || $c_address === '' || $p_name === '' || $area === '') fail('missing');
 if (!preg_match('/^(\+?20|0)?1[0125]\d{8}$/', preg_replace('/[\s-]/', '', $c_phone) ?? '')) fail('phone');
 
+// A cart line with a page (every card, or a stand/coaster with the page add-on) collects all links, whatever plan was posted.
+$wantsPage = false;
+$rawLines = json_decode((string)($_POST['items'] ?? ''), true);
+foreach (is_array($rawLines) ? array_slice($rawLines, 0, 10) : [] as $ln) {
+    if (is_array($ln) && rt_item_has_page(['product' => (string)($ln['product'] ?? ''), 'plan' => (string)($ln['plan'] ?? ''), 'extras' => (array)($ln['extras'] ?? [])])) { $wantsPage = true; break; }
+}
 $links = [];
-if ($plan === 'basic') {
+if ($plan === 'basic' && !$wantsPage) {
     $t = $_POST['one_type'] ?? '';
     $v = rt_clean($_POST['one_value'] ?? '', 300);
     if (in_array($t, RT_LINK_TYPES, true) && $v !== '') $links[] = ['type' => $t, 'value' => $v];
@@ -63,13 +69,16 @@ if (is_array($raw) && $raw) {
         $iq = max(1, min((int)($it['qty'] ?? 1), $max));
         // Stands and coasters: plan = size, plus paid add-ons (custom design, landing page).
         $extras = in_array($ip, RT_SIZED, true) ? array_values(array_intersect(RT_EXTRAS, (array)($it['extras'] ?? []))) : [];
+        // Cards: the design field is the card type (PVC, metal, wood, blank), each with its own price difference.
+        $design = $ip === 'card' ? rt_card_type((string)($it['design'] ?? '')) : (preg_replace('/[^a-z0-9-]/', '', strtolower((string)($it['design'] ?? ''))) ?: '');
+        $typeDiff = $ip === 'card' ? (int)($site['card_type_price'][$design] ?? 0) : 0;
         $items[] = [
             'product' => $ip,
             'plan' => $ipl,
             'qty' => $iq,
-            'design' => preg_replace('/[^a-z0-9-]/', '', strtolower((string)($it['design'] ?? ''))) ?: '',
+            'design' => $design,
             'extras' => $extras,
-            'unit_price' => (int)$site['products'][$ip][$ipl] + count($extras) * (int)($site['extra_price'] ?? 20),
+            'unit_price' => (int)$site['products'][$ip][$ipl] + count($extras) * (int)($site['extra_price'] ?? 20) + $typeDiff,
         ];
     }
     $qty = array_sum(array_column($items, 'qty'));
@@ -77,6 +86,15 @@ if (is_array($raw) && $raw) {
     // The order gets a full page if any line has one: a Plus card, or a stand/coaster with the landing page add-on.
     $plan = array_filter($items, 'rt_item_has_page') ? 'plus' : 'basic';
     if (!in_array($product, array_column($items, 'product'), true)) $product = $items[0]['product'];
+}
+
+// Discount code: checked again here, the browser only shows a preview of it.
+$coupon = rt_coupon_code((string)($_POST['coupon'] ?? ''));
+$discount = 0;
+if ($coupon !== '') {
+    [$discount, $cerr] = rt_coupon_check($coupon, $total - $delivery);
+    if ($cerr !== '') fail('coupon_' . $cerr);
+    $total -= $discount;
 }
 
 do {
@@ -95,7 +113,11 @@ $order = [
     'unit_price' => $unit,
     'items' => $items,
     'delivery_fee' => $delivery,
+    'coupon' => $coupon,
+    'discount' => $discount,
     'total' => $total,
+    // InstaPay transfer: the owner confirms it in the admin, which marks the order paid.
+    'payment' => ['method' => 'instapay', 'status' => 'awaiting', 'amount' => $total, 'ref' => '', 'note' => ''],
     'customer' => [
         'name' => $c_name,
         'phone' => $c_phone,
@@ -120,13 +142,14 @@ $order = [
 
 rt_write_json(rt_order_path($id), $order);
 touch($ipKey);
+if ($coupon !== '') rt_coupon_use($coupon);
 
 $to = (string)(rt_private()['notify_email'] ?? '');
 if ($to !== '' && function_exists('mail')) {
     $lines = [
         "New RemoTap order $id",
         $items
-            ? implode("\n", array_map(fn($i) => $i['product'] . ' / ' . rt_plan_label($i['product'], $i['plan']) . ($i['design'] ? " ({$i['design']})" : '') . ($i['extras'] ? ' + ' . implode(', ', $i['extras']) : '') . " x {$i['qty']}", $items)) . "\nTotal $total EGP (incl. $delivery delivery)"
+            ? implode("\n", array_map(fn($i) => $i['product'] . ' / ' . rt_plan_label($i['product'], $i['plan']) . ($i['design'] ? " ({$i['design']})" : '') . ($i['extras'] ? ' + ' . implode(', ', $i['extras']) : '') . " x {$i['qty']}", $items)) . "\nTotal $total EGP (incl. $delivery delivery" . ($discount ? ", $discount off with code $coupon" : '') . ')'
             : "{$order['product']} / {$order['plan']} x $qty = $total EGP (incl. $delivery delivery)",
         "Customer: $c_name, $c_phone",
         "Address: $area, $c_address",
@@ -137,5 +160,12 @@ if ($to !== '' && function_exists('mail')) {
     ];
     @mail($to, "RemoTap order $id - $total EGP", implode("\n", $lines), "Content-Type: text/plain; charset=UTF-8");
 }
+
+rt_notify("🛒 New order $id - $total EGP
+" . implode("
+", array_map(fn($i) => ucfirst($i['product']) . ' ' . rt_plan_label($i['product'], $i['plan']) . ' x ' . $i['qty'], $items ?: [['product' => $product, 'plan' => $plan, 'qty' => $qty]])) . "
+$c_name, $c_phone ($area)" . ($coupon !== '' ? "
+Code $coupon (-$discount)" : '') . "
+Waiting for InstaPay: " . rt_base_url() . '/admin.php?tab=instapay');
 
 echo json_encode(['ok' => true, 'id' => $id, 'total' => $total]);

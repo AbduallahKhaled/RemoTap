@@ -10,6 +10,7 @@ import { CARD_DESIGNS } from "@/components/ui/cards-shader-effect-utils/shaders-
 import { NfcWaves } from "@/components/site/brand";
 import { ProductGrid, ProductRail, SectionHead } from "@/components/site/shop";
 import { CtaBand } from "@/components/site/sections";
+import { Reviews } from "@/components/site/reviews";
 import { cn } from "@/lib/utils";
 
 function useCoarse() {
@@ -151,6 +152,7 @@ export default function HomeClient() {
         <ProductGrid />
       </section>
       <ProductRail id="best" title={t("home.best")} items={config.home?.best} />
+      <Reviews />
       <CtaBand />
     </>
   );

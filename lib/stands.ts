@@ -127,7 +127,15 @@ export const standStyle = (id?: string) => STAND_STYLES.find((s) => s.id === id)
 /** Name of the chosen look (card design or stand design), or "" if none. */
 export function lookName(product: string, design: string | undefined, lang: "en" | "ar") {
   if (!design) return "";
-  if (product === "card") return CARD_DESIGNS.find((d) => d.id === design)?.name[lang] ?? "";
+  if (product === "card") return CARD_TYPE_NAME[design as keyof typeof CARD_TYPE_NAME]?.[lang] ?? CARD_DESIGNS.find((d) => d.id === design)?.name[lang] ?? "";
   if (product === "stand") return STAND_STYLES.find((s) => s.id === design)?.name[lang] ?? "";
   return "";
 }
+
+/** Names of the card types, for the cart and the order summary. */
+const CARD_TYPE_NAME = {
+  pvc: { en: "PVC card", ar: "كارت PVC" },
+  metal: { en: "Metal card", ar: "كارت معدن" },
+  wood: { en: "Wood card", ar: "كارت خشب" },
+  blank: { en: "Blank card", ar: "كارت سادة" },
+};

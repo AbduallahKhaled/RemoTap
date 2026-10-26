@@ -70,7 +70,7 @@ fs.writeFileSync(distConfigPath, JSON.stringify(distConfig, null, 2) + "\n");
 const phpConfig = path.join(dist, "private", "config.php");
 fs.writeFileSync(phpConfig, fs.readFileSync(phpConfig, "utf8").replace(/'base_url'\s*=>\s*'[^']*'/, `'base_url' => '${site}'`));
 
-const pages = ["", "shop", "pricing", "how", "demo", "for", "why", "faq", ...Object.keys(config.products).map((p) => `product/${p}`)];
+const pages = ["", "shop", "pricing", "how", "demo", "for", "why", "faq", "services", "track", "distributors", ...Object.keys(config.products).map((p) => `product/${p}`)];
 fs.writeFileSync(
   path.join(dist, "sitemap.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +

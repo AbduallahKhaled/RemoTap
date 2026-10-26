@@ -116,9 +116,40 @@ function rt_plan_label(string $product, string $plan): string {
     return RT_SIZES[$product][$plan] ?? ucfirst($plan);
 }
 
-/** Does an order line come with a full page of links? */
+/** Does an order line come with a page of links? Every card does (free); stands and coasters with the page add-on do. */
 function rt_item_has_page(array $i): bool {
-    return in_array($i['product'] ?? '', RT_SIZED, true) ? in_array('page', $i['extras'] ?? [], true) : ($i['plan'] ?? '') === 'plus';
+    if (in_array($i['product'] ?? '', RT_SIZED, true)) return in_array('page', $i['extras'] ?? [], true);
+    return ($i['product'] ?? '') === 'card' || ($i['plan'] ?? '') === 'plus';
+}
+
+/** Card types (the card's `design` field). Keep in sync with lib/store.ts. */
+const RT_CARD_TYPES = ['pvc' => 'PVC card', 'metal' => 'Metal card', 'wood' => 'Wood card', 'blank' => 'Blank card'];
+function rt_card_type(string $design): string {
+    $d = strtolower(trim($design));
+    return isset(RT_CARD_TYPES[$d]) ? $d : 'pvc'; // older orders had a colour look in this field: they were the PVC card
+}
+
+/** Products the admin can price. Plan labels are the sizes for stands and coasters. Keep in sync with lib/store.ts. */
+const RT_CATALOG = [
+    'card' => ['name' => 'RemoTap Card', 'plans' => ['basic' => 'Basic', 'plus' => 'Plus']],
+    'stand' => ['name' => 'RemoTap Stand', 'plans' => ['basic' => '10x15 cm', 'plus' => '15x20 cm']],
+    'coaster' => ['name' => 'RemoTap Coaster', 'plans' => ['basic' => '9x9 cm', 'plus' => '12x12 cm']],
+    'instapay' => ['name' => 'InstaPay tap card', 'plans' => ['basic' => 'One price']],
+    'vfcash' => ['name' => 'Vodafone Cash tap card', 'plans' => ['basic' => 'One price']],
+];
+
+/** Save site-config.json (read by the store and by api/order.php). Keeps the last 20 versions in data/backups. */
+function rt_save_site(array $c): void {
+    $file = RT_ROOT . '/site-config.json';
+    if (is_file($file)) {
+        $dir = RT_DATA . '/backups';
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        copy($file, $dir . '/site-config-' . date('Ymd-His') . '.json');
+        $all = glob($dir . '/site-config-*.json') ?: [];
+        sort($all);
+        foreach (array_slice($all, 0, max(0, count($all) - 20)) as $old) @unlink($old);
+    }
+    rt_write_json($file, $c);
 }
 
 const RT_LINK_TYPES = ['instapay', 'vfcash', 'whatsapp', 'phone', 'email', 'resume', 'instagram', 'linkedin', 'facebook', 'tiktok', 'google', 'website', 'menu'];
@@ -187,3 +218,5 @@ function rt_primary(array $p): array {
     if (!empty($p['primary']['type']) && !empty($p['primary']['value'])) return $p['primary'];
     return $p['links'][0] ?? ['type' => 'website', 'value' => rt_base_url()];
 }
+
+require __DIR__ . '/lib-store.php';

@@ -3,8 +3,8 @@
   "brand": "RemoTap",
   "domain": "remotap.com",
   "whatsapp": "201127209609",
-  "instapay_handle": "remotap@instapay",
-  "instapay_number": "01000000000",
+  "instapay_handle": "Vampotypebeats@instapay",
+  "instapay_number": "01127209609",
   "instapay_link": "",
   "currency": "EGP",
   "delivery_fee": 65,
@@ -82,5 +82,27 @@
     ]
   },
   "delivery_fee_other": 75,
-  "_delivery_note": "delivery_fee = Cairo and Giza. delivery_fee_other = every other governorate in Egypt."
+  "_delivery_note": "delivery_fee = Cairo and Giza. delivery_fee_other = every other governorate in Egypt.",
+  "card_type_price": {
+    "pvc": 0,
+    "metal": 250,
+    "wood": 150,
+    "blank": 0
+  },
+  "_card_type_note": "card_type_price = EGP added to the card price for each type (can be negative). Edit in the admin under Products & prices.",
+  "services": {
+    "review_filter": {
+      "price": 300,
+      "show": true
+    },
+    "landing_page": {
+      "price": 200,
+      "show": true
+    },
+    "website": {
+      "price": null,
+      "show": true
+    }
+  },
+  "_services_note": "Extra services shown on /services. price empty = 'price on request'. Edit in the admin under Extra services."
 }

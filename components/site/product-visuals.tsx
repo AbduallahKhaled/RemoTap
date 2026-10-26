@@ -5,7 +5,7 @@ import { asset } from "@/lib/nav";
 import { CARD_DESIGNS } from "@/components/ui/cards-shader-effect-utils/shaders-map";
 import { NfcWaves, Wordmark } from "@/components/site/brand";
 import { useStore } from "@/components/providers";
-import type { ProductKey } from "@/lib/store";
+import { cardType, type ProductKey } from "@/lib/store";
 import { standStyle } from "@/lib/stands";
 import { Star, Utensils, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -150,25 +150,9 @@ export function CoasterPlate({ className }: { className?: string }) {
   return <PhotoTile src="/assets/img/products/coaster-remotap.webp" className={className} />;
 }
 
-/**
- * Photo of the black RemoTap card, used on the shop tile. The photo is 1254×1254 with the card at
- * x 272-986, y 397-851, so it is cropped to just the card (no white background on the dark tile).
- */
-export function CardPhoto({ className }: { className?: string }) {
-  return (
-    <div className={cn("relative aspect-[714/454] select-none overflow-hidden rounded-[3.5%/5.5%] border border-white/15", className)}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={asset("/assets/img/products/card-remotap.webp")}
-        alt=""
-        width={1254}
-        height={1254}
-        loading="lazy"
-        className="absolute max-w-none"
-        style={{ width: `${(1254 / 714) * 100}%`, left: `${(-272 / 714) * 100}%`, top: `${(-397 / 454) * 100}%` }}
-      />
-    </div>
-  );
+/** Photo of a RemoTap card by type (pvc, metal, wood, blank): the card on a white square, like the stands. */
+export function CardPhoto({ className, type }: { className?: string; type?: string }) {
+  return <PhotoTile src={`/assets/img/products/card-${cardType(type)}.webp`} className={className} />;
 }
 
 /**

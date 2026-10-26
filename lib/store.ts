@@ -3,6 +3,17 @@ export const PRODUCTS: ProductKey[] = ["card", "stand", "coaster", "instapay", "
 /** For cards: Basic/Plus. For products sold by size (stand, coaster): basic = small, plus = large. */
 export type PlanKey = "basic" | "plus";
 
+/** Card types (the material). The card's `design` field holds one of these. */
+export const CARD_TYPES = ["pvc", "metal", "wood", "blank"] as const;
+export type CardType = (typeof CARD_TYPES)[number];
+export const cardType = (design?: string): CardType => ((CARD_TYPES as readonly string[]).includes(design ?? "") ? (design as CardType) : "pvc");
+/** Cards with a laser-carved design: the customer says what is carved. */
+export const isCarved = (design?: string) => cardType(design) === "metal" || cardType(design) === "wood";
+
+/** Extra services sold on the Services page. Prices are edited in the admin. */
+export const SERVICES = ["review_filter", "landing_page", "website"] as const;
+export type ServiceKey = (typeof SERVICES)[number];
+
 /** Paid add-ons on products sold by size, each at `extra_price`. */
 export type ExtraKey = "design" | "page";
 export const EXTRAS: ExtraKey[] = ["design", "page"];
@@ -29,6 +40,10 @@ export type SiteConfig = {
   home?: { new?: RailItem[]; best?: RailItem[] };
   /** Price of each add-on (custom design, landing page) on stands and coasters. */
   extra_price?: number;
+  /** EGP added to (or taken off) the card price for each card type. */
+  card_type_price?: Partial<Record<CardType, number>>;
+  /** Extra services: price in EGP (empty = price on request) and whether it shows on the Services page. */
+  services?: Partial<Record<ServiceKey, { price?: number | null; show?: boolean }>>;
   max_quantity: number;
   domain?: string;
 };
@@ -50,6 +65,8 @@ export const FALLBACK_CONFIG: SiteConfig = {
     vfcash: { basic: 150 },
   },
   extra_price: 20,
+  card_type_price: { pvc: 0, metal: 250, wood: 150, blank: 0 },
+  services: { review_filter: { price: 300, show: true }, landing_page: { price: 200, show: true }, website: { price: null, show: true } },
   home: {
     new: [{ product: "coaster", plan: "plus" }, { product: "vfcash" }, { product: "instapay" }, { product: "stand", design: "remotap" }],
     best: [{ product: "card", plan: "plus" }, { product: "stand", design: "google" }, { product: "stand", design: "menu" }, { product: "stand", design: "instapay" }],
@@ -76,8 +93,8 @@ export const itemKey = (i: CartItem) => `${i.product}-${i.plan}-${i.design ?? ""
 /** Features per product and plan: [dictionary key, included?] */
 export const FEATURES: Record<ProductKey, Record<PlanKey, [string, boolean][]>> = {
   card: {
-    basic: [["f.hardware.card", true], ["f.onelink", true], ["f.page", false], ["f.save", false], ["f.edits", false], ["f.taps", false]],
-    plus: [["f.hardware.card", true], ["f.page", true], ["f.alllinks", true], ["f.save", true], ["f.edits", true], ["f.taps", true]],
+    basic: [["f.hardware.card", true], ["f.freepage", true], ["f.alllinks", true], ["f.save", true], ["f.custompage", false]],
+    plus: [["f.hardware.card", true], ["f.freepage", true], ["f.custompage", true], ["f.alllinks", true], ["f.save", true], ["f.edits", true], ["f.taps", true]],
   },
   instapay: {
     basic: [["f.hardware.instapay", true], ["f.instapay.direct", true], ["f.instapay.noapp", true], ["f.instapay.change", true]],
@@ -112,12 +129,12 @@ export const price = (c: SiteConfig, p: ProductKey, plan: PlanKey) => Number(c.p
 export const extraPrice = (c: SiteConfig) => Number(c.extra_price ?? 20);
 
 /** Price of one piece of a cart line: base price plus its add-ons. */
-export const itemPrice = (c: SiteConfig, i: Pick<CartItem, "product" | "plan" | "extras">) =>
-  price(c, i.product, i.plan) + (isSized(i.product) ? (i.extras?.length ?? 0) * extraPrice(c) : 0);
+export const itemPrice = (c: SiteConfig, i: Pick<CartItem, "product" | "plan" | "extras"> & { design?: string }) =>
+  price(c, i.product, i.plan) + (isSized(i.product) ? (i.extras?.length ?? 0) * extraPrice(c) : 0) + (i.product === "card" ? Number(c.card_type_price?.[cardType(i.design)] ?? 0) : 0);
 
-/** Does this line come with a full page of links? Plus cards do; stands and coasters with the landing page add-on do. */
+/** Does this line come with a page of links? Every card does (free); stands and coasters with the landing page add-on do. */
 export const hasPage = (i: Pick<CartItem, "product" | "plan" | "extras">) =>
-  isSized(i.product) ? !!i.extras?.includes("page") : i.plan === "plus";
+  isSized(i.product) ? !!i.extras?.includes("page") : i.product === "card" || i.plan === "plus";
 
 /** "Basic"/"Plus" for cards, the size for stands and coasters. */
 export const planLabel = (p: ProductKey, plan: PlanKey) => SIZES[p]?.[plan] ?? (plan === "plus" ? "Plus" : "Basic");

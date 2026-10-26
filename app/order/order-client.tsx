@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, Copy, ExternalLink, Plus, ShieldCheck, Sparkles, Timer, Trash2, Upload, MessageCircle } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink, Plus, ShieldCheck, Sparkles, Timer, Trash2, Upload, MessageCircle, PackageSearch } from "lucide-react";
 import { useStore } from "@/components/providers";
 import { NavLink, useNav, PREVIEW } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Qty } from "@/components/site/chrome";
 import { NfcWaves } from "@/components/site/brand";
 import { MiniCard, ProductThumb } from "@/components/site/product-visuals";
 import { lookName, standStyle } from "@/lib/stands";
-import { LINKS, LINK_PH, deliveryFee, extraPrice, hasPage, isSized, itemKey, itemPrice, planLabel, plansFor, type PlanKey, type ProductKey, price } from "@/lib/store";
+import { LINKS, LINK_PH, deliveryFee, isCarved, extraPrice, hasPage, isSized, itemKey, itemPrice, planLabel, plansFor, type PlanKey, type ProductKey, price } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 type Form = Record<string, string>;
@@ -56,6 +56,10 @@ export default function OrderClient() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ id: string; total: number; offline: boolean; items: string } | null>(null);
   const [copied, setCopied] = useState("");
+  // "I've sent the money" on the payment screen: idle -> busy -> sent | error
+  const [paid, setPaid] = useState<"idle" | "busy" | "sent" | "error">("idle");
+  const [proof, setProof] = useState<File | null>(null);
+  const [payRef, setPayRef] = useState("");
   const printTouched = useRef(false);
   const top = useRef<HTMLDivElement>(null);
   const presetDone = useRef(false);
@@ -102,7 +106,13 @@ export default function OrderClient() {
   const preType = standLink ? standStyle(standLink).link : "";
   const oneType = f.one_type && linkTypes.includes(f.one_type) ? f.one_type : linkTypes.includes(preType) ? preType : linkTypes[0];
   const delivery = deliveryFee(config, f.c_area);
-  const total = cartTotal + delivery;
+  // Discount code: the server checks it again when the order is placed.
+  const [code, setCode] = useState("");
+  const [disc, setDisc] = useState<{ code: string; type: "percent" | "fixed"; value: number; min: number } | null>(null);
+  const [codeErr, setCodeErr] = useState("");
+  // Same rule as rt_coupon_check() in backend/lib-store.php, so the amount follows cart changes.
+  const discount = !disc || cartTotal < disc.min ? 0 : disc.type === "percent" ? Math.floor((cartTotal * Math.min(100, disc.value)) / 100) : Math.min(cartTotal, disc.value);
+  const total = cartTotal - discount + delivery;
   const count = cart.reduce((s, i) => s + i.qty, 0);
 
   const set = (k: string, v: string) => {
@@ -180,6 +190,28 @@ export default function OrderClient() {
     return linkTypes.map((k) => [k, v(`l_${k}`)] as [string, string]).filter(([, x]) => x);
   }
 
+  async function applyCode(raw: string) {
+    const c = raw.trim().toUpperCase();
+    if (!c) {
+      setDisc(null);
+      setCodeErr("");
+      return;
+    }
+    try {
+      const r = await fetch(`${PREVIEW ? "" : "/"}api/coupon.php?code=${encodeURIComponent(c)}&subtotal=${cartTotal}`);
+      const j = await r.json();
+      if (j?.ok) {
+        setDisc({ code: j.code, type: j.type === "fixed" ? "fixed" : "percent", value: Number(j.value) || 0, min: Number(j.min) || 0 });
+        setCodeErr("");
+      } else {
+        setDisc(null);
+        setCodeErr(j?.error === "min" ? t("o.code.min", { min: j.min }) : t("o.code.bad"));
+      }
+    } catch {
+      setCodeErr(t("o.code.off"));
+    }
+  }
+
   async function submit() {
     setBusy(true);
     const fd = new FormData();
@@ -198,11 +230,19 @@ export default function OrderClient() {
     fd.set("source", source());
     fd.set("website_hp", (document.getElementById("website_hp") as HTMLInputElement)?.value ?? "");
     if (logo) fd.set("logo", logo);
+    fd.set("coupon", discount > 0 && disc ? disc.code : "");
     const items = cart.map(itemLabel).join("\n");
     let res: { id: string; total: number; offline: boolean };
     try {
       const r = await fetch(PREVIEW ? "api/order.php" : "/api/order.php", { method: "POST", body: fd });
       const j = await r.json();
+      if (!j?.ok && String(j?.error).startsWith("coupon_")) {
+        // The code ended while the customer was checking out: drop it and let them place the order again.
+        setDisc(null);
+        setCodeErr(t("o.code.bad"));
+        setBusy(false);
+        return;
+      }
       if (!j?.ok) throw new Error(j?.error || "fail");
       res = { id: j.id, total: j.total ?? total, offline: false };
     } catch {
@@ -240,6 +280,23 @@ export default function OrderClient() {
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(ok, ok);
     else ok();
   };
+
+  async function tellPaid() {
+    if (!done) return;
+    setPaid("busy");
+    const fd = new FormData();
+    fd.set("id", done.id);
+    fd.set("phone", v("c_phone"));
+    fd.set("ref", payRef);
+    if (proof) fd.set("proof", proof);
+    try {
+      const r = await fetch(PREVIEW ? "api/paid.php" : "/api/paid.php", { method: "POST", body: fd });
+      const j = await r.json();
+      setPaid(j?.ok ? "sent" : "error");
+    } catch {
+      setPaid("error");
+    }
+  }
 
   /* ---------------- Payment screen ---------------- */
   if (step === 5 && done) {
@@ -296,6 +353,30 @@ export default function OrderClient() {
               {t("p.s2")}
             </div>
             <p className="mt-3 text-sm text-white/60">{t("p.s2.b")}</p>
+            {!done.offline && (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="text-sm font-semibold">{t("paid.t")}</div>
+                {paid === "sent" ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-brand-cyan" role="status">
+                    <Check className="size-4" /> {t("paid.ok")}
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-1 text-xs text-white/55">{t("paid.b")}</p>
+                    <label className="tap mt-3 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-white/20 px-4 py-3 text-sm text-white/75 hover:border-brand-cyan">
+                      <Upload className="size-4" />
+                      <span className="truncate">{proof ? proof.name : t("paid.file")}</span>
+                      <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => setProof(e.target.files?.[0] ?? null)} />
+                    </label>
+                    <input value={payRef} onChange={(e) => setPayRef(e.target.value)} maxLength={60} dir="ltr" placeholder={t("paid.ref")} aria-label={t("paid.ref")} className="mt-2 h-11 w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 text-sm outline-none placeholder:text-white/30 focus:border-brand-purple" />
+                    <Button onClick={tellPaid} disabled={paid === "busy"} size="lg" className="mt-3 w-full">
+                      <Check /> {t("paid.btn")}
+                    </Button>
+                    {paid === "error" && <p className="mt-2 text-xs text-red-300" role="alert">{t("paid.err")} {t("paid.img")}</p>}
+                  </>
+                )}
+              </div>
+            )}
             <Button asChild variant="whatsapp" size="lg" className="mt-4 w-full">
               <a href={waLink(waMessage)} target="_blank" rel="noopener">
                 <MessageCircle /> {t("p.wa")}
@@ -310,7 +391,14 @@ export default function OrderClient() {
             <p className="mt-3 text-sm text-white/60">{t("p.s3.b")}</p>
           </li>
         </ol>
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {!done.offline && (
+            <Button asChild variant="outline">
+              <NavLink href={`/track?id=${done.id}`}>
+                <PackageSearch /> {t("p.track")}
+              </NavLink>
+            </Button>
+          )}
           <Button asChild variant="ghost">
             <NavLink href="/">{t("p.home")}</NavLink>
           </Button>
@@ -472,7 +560,7 @@ export default function OrderClient() {
                   <Field id="p_name" err={errs.p_name} opt={t("o.optional")} label={t("o.pname")}>
                     {text("p_name", { maxLength: 60, placeholder: t(`o.pname.ph.${phProduct}`) })}
                   </Field>
-                  <Field id="print_text" err={errs.print_text} opt={t("o.optional")} label={t("o.print")} hint={t("o.print.h")}>
+                  <Field id="print_text" err={errs.print_text} opt={t("o.optional")} label={t("o.print")} hint={t("o.print.h") + (cart.some((i) => i.product === "card" && isCarved(i.design)) ? " " + t("ct.carve.order") : "")}>
                     <input
                       id="print_text"
                       value={f.print_text ?? ""}
@@ -687,6 +775,14 @@ export default function OrderClient() {
                 <span>{t("o.sum.sub")}</span>
                 <span>{money(cartTotal)}</span>
               </div>
+              {disc && discount > 0 && cart.length > 0 && (
+                <div className="flex justify-between text-brand-cyan">
+                  <span>
+                    {t("o.sum.disc")} (<span dir="ltr">{disc.code}</span>)
+                  </span>
+                  <span>−{money(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-white/60">
                 <span>{t("o.sum.delivery")}</span>
                 <span>{money(cart.length ? delivery : 0)}</span>
@@ -698,6 +794,30 @@ export default function OrderClient() {
                 </span>
               </div>
             </div>
+            {cart.length > 0 && (
+              <form
+                className="mt-5 border-t border-white/10 pt-5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void applyCode(code);
+                }}
+              >
+                <label htmlFor="coupon" className="text-sm text-white/60">{t("o.code")}</label>
+                <div className="mt-2 flex gap-2">
+                  <input id="coupon" value={code} onChange={(e) => setCode(e.target.value)} maxLength={30} dir="ltr" autoComplete="off" className="h-11 min-w-0 flex-1 rounded-full border border-white/15 bg-transparent px-4 text-sm uppercase outline-none focus:border-brand-cyan" />
+                  {disc ? (
+                    <button type="button" onClick={() => { setDisc(null); setCode(""); }} className="tap h-11 rounded-full border border-white/15 px-4 text-sm">{t("o.code.remove")}</button>
+                  ) : (
+                    <button type="submit" className="tap h-11 rounded-full border border-white/15 px-4 text-sm">{t("o.code.apply")}</button>
+                  )}
+                </div>
+                {(codeErr || (disc && discount === 0)) && (
+                  <p className="mt-2 text-xs text-red-300" role="alert">
+                    {codeErr || t("o.code.min", { min: disc?.min ?? 0 })}
+                  </p>
+                )}
+              </form>
+            )}
           </div>
           <ul className="mt-4 space-y-3 px-2 text-sm text-white/55">
             <li className="flex items-center gap-3"><ShieldCheck className="size-4 text-brand-cyan" /> {t("o.perk1")}</li>

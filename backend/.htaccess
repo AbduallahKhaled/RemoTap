@@ -23,7 +23,7 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{DOCUMENT_ROOT}/$1.html -f
 RewriteRule ^(.+?)/?$ $1.html [L]
 
-<FilesMatch "^(lib\.php)$">
+<FilesMatch "^(lib|lib-store)\.php$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

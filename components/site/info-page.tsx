@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CircleHelp, ListOrdered, Smartphone, Sparkles, Tag, Users } from "lucide-react";
+import { Briefcase, CircleHelp, ListOrdered, Smartphone, Sparkles, Tag, Users } from "lucide-react";
 import { useStore } from "@/components/providers";
 import { NavLink } from "@/lib/nav";
 import { Pricing, SectionHead } from "@/components/site/shop";
+import { Services } from "@/components/site/services";
 import { Audience, BigMarquee, Compare, CtaBand, Demo, Faq, How } from "@/components/site/sections";
 
 /** Detail pages: everything that is not on the short home page. Each has its own URL (/stands, /how, ...). */
@@ -15,6 +16,7 @@ export const INFO_PAGES = [
   { key: "for", title: "aud.eyebrow", icon: Users },
   { key: "why", title: "cmp.eyebrow", icon: Sparkles },
   { key: "faq", title: "nav.faq", icon: CircleHelp },
+  { key: "services", title: "nav.services", icon: Briefcase },
 ] as const;
 
 export type InfoKey = (typeof INFO_PAGES)[number]["key"];
@@ -45,6 +47,8 @@ function Content({ page }: { page: InfoKey }): ReactNode {
       return <Demo />;
     case "faq":
       return <Faq />;
+    case "services":
+      return <Services />;
   }
 }
 

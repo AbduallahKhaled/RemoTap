@@ -12,10 +12,10 @@ import { NfcWaves } from "@/components/site/brand";
 import { FEATURES, PRODUCTS, isSized, planLabel, plansFor, price, type PlanKey, type ProductKey, type RailItem } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-const TILE_DESIGN: Record<PlanKey, string> = { plus: "holo", basic: "liquid" };
+const TILE_DESIGN: Record<PlanKey, string> = { plus: "pvc", basic: "pvc" };
 
 /** Store tile: one per product, big visual, Basic/Plus switch, price, quick add. */
-export function ProductTile({ product, plan: startPlan = "plus", index = 0 }: { product: ProductKey; plan?: PlanKey; index?: number }) {
+export function ProductTile({ product, plan: startPlan = "plus", index = 0, compact = false }: { product: ProductKey; plan?: PlanKey; index?: number; compact?: boolean }) {
   const { t, config, money, cur, addToCart, setCartOpen } = useStore();
   const plans = plansFor(config, product);
   const [want, setWant] = useState<PlanKey>(startPlan);
@@ -25,10 +25,10 @@ export function ProductTile({ product, plan: startPlan = "plus", index = 0 }: { 
   return (
     <article className="reveal group relative flex flex-col" style={{ transitionDelay: `${index * 70}ms` }}>
       <NavLink href={href} className="block">
-        <div className="rt-box relative aspect-[4/5] overflow-hidden rounded-3xl bg-gradient-to-br from-[#15153a] via-ink-2 to-ink">
+        <div className={cn("rt-box relative overflow-hidden bg-gradient-to-br from-[#15153a] via-ink-2 to-ink", compact ? "aspect-square rounded-2xl" : "aspect-[4/5] rounded-3xl")}>
           <div className="absolute inset-0 opacity-60 hero-grid" />
           <div className="absolute inset-0 grid place-items-center transition-transform duration-700 ease-out group-hover:scale-[1.06]">
-            {product === "card" && <CardPhoto className="w-[74%] rotate-[-4deg] shadow-[0_30px_60px_-20px_rgba(0,0,0,.9)] transition-transform duration-700 group-hover:rotate-0" />}
+            {product === "card" && <CardPhoto type="pvc" className="w-[74%] rotate-[-4deg] shadow-[0_30px_60px_-20px_rgba(0,0,0,.9)] transition-transform duration-700 group-hover:rotate-0" />}
             {product === "stand" && <StandPlate design="remotap" className="w-[86%] rotate-[-3deg] shadow-[0_30px_60px_-20px_rgba(0,0,0,.9)] transition-transform duration-700 group-hover:rotate-0" />}
             {product === "coaster" && <CoasterPlate className="w-[86%] rotate-[-3deg] shadow-[0_30px_60px_-20px_rgba(0,0,0,.9)] transition-transform duration-700 group-hover:rotate-0" />}
             {(product === "instapay" || product === "vfcash") && <TapCardPhoto product={product} className="h-[72%] w-auto rotate-[5deg] transition-transform duration-700 group-hover:rotate-0" />}
@@ -37,43 +37,45 @@ export function ProductTile({ product, plan: startPlan = "plus", index = 0 }: { 
             {isNew && <span className="rounded-full bg-brand-cyan px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink sm:px-3 sm:text-[11px]">{t("tag.new")}</span>}
             {product === "card" && <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink sm:px-3 sm:text-[11px]">{t("tag.best")}</span>}
           </div>
-          <span className="absolute end-3 top-3 hidden size-10 place-items-center rounded-full border border-white/20 bg-black/30 text-white/80 backdrop-blur transition group-hover:bg-white group-hover:text-ink sm:end-4 sm:top-4 sm:grid rtl:-scale-x-100">
-            <ArrowUpRight className="size-4" />
-          </span>
+          {!compact && (
+            <span className="absolute end-3 top-3 hidden size-10 place-items-center rounded-full border border-white/20 bg-black/30 text-white/80 backdrop-blur transition group-hover:bg-white group-hover:text-ink sm:end-4 sm:top-4 sm:grid rtl:-scale-x-100">
+              <ArrowUpRight className="size-4" />
+            </span>
+          )}
         </div>
       </NavLink>
-      <div className="mt-4 flex items-start justify-between gap-3 px-1">
+      <div className={cn("flex justify-between px-1", compact ? "mt-3 flex-col gap-1" : "mt-4 items-start gap-3")}>
         <div className="min-w-0">
-          <h3 className="font-display text-[13px] uppercase tracking-wide sm:text-[15px]">
+          <h3 className={cn("font-display uppercase tracking-wide", compact ? "text-[11px] leading-snug sm:text-[12px]" : "text-[13px] sm:text-[15px]")}>
             <NavLink href={href}>{t(`prod.${product}`)}</NavLink>
           </h3>
-          <p className="mt-1 line-clamp-2 text-sm text-white/55">{t(`price.${plan}.sub.${product}`)}</p>
+          <p className={cn("mt-1 text-white/55", compact ? "line-clamp-1 text-xs" : "line-clamp-2 text-sm")}>{t(`price.${plan}.sub.${product}`)}</p>
         </div>
-        <div className="shrink-0 text-end text-lg font-extrabold">
+        <div className={cn("shrink-0 font-extrabold", compact ? "text-base" : "text-end text-lg")}>
           {money(price(config, product, plan))} <span className="text-xs font-semibold text-white/60">{cur}</span>
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-2 px-1">
+      <div className={cn("flex gap-2 px-1", compact ? "mt-3 flex-col items-stretch" : "mt-4 items-center")}>
         {plans.length > 1 ? (
-          <div className="inline-flex rounded-full border border-white/15 p-0.5 text-xs font-bold" role="radiogroup" aria-label={t("prod.plan")}>
+          <div className={cn("inline-flex rounded-full border border-white/15 p-0.5 text-xs font-bold", compact && "self-start")} role="radiogroup" aria-label={t("prod.plan")}>
             {plans.map((p) => (
               <button
                 key={p}
                 role="radio"
                 aria-checked={plan === p}
                 onClick={() => setWant(p)}
-                className={cn("rounded-full px-3.5 py-1.5 transition", plan === p ? "bg-white text-ink" : "text-white/65 hover:text-white")}
+                className={cn("rounded-full transition", compact ? "px-2.5 py-1" : "px-3.5 py-1.5", plan === p ? "bg-white text-ink" : "text-white/65 hover:text-white")}
               >
                 {planLabel(product, p)}
               </button>
             ))}
           </div>
         ) : (
-          <span className="rounded-full border border-white/15 px-3.5 py-1.5 text-xs font-bold text-white/65">{t("tag.one")}</span>
+          <span className={cn("rounded-full border border-white/15 text-xs font-bold text-white/65", compact ? "self-start px-2.5 py-1" : "px-3.5 py-1.5")}>{t("tag.one")}</span>
         )}
         <Button
           size="sm"
-          className="ms-auto"
+          className={compact ? "w-full" : "ms-auto"}
           onClick={() => {
             addToCart({ product, plan, qty: 1, design: product === "card" ? TILE_DESIGN[plan] : product === "stand" ? "remotap" : undefined });
             setCartOpen(true);
@@ -145,7 +147,7 @@ export function StandRange() {
 /** Product photo sized for a square rail tile. */
 function RailVisual({ item }: { item: RailItem }) {
   const fx = "shadow-[0_24px_50px_-18px_rgba(0,0,0,.9)] transition-transform duration-700 group-hover:scale-[1.04]";
-  if (item.product === "card") return <CardPhoto className={cn("w-[84%] -rotate-3", fx)} />;
+  if (item.product === "card") return <CardPhoto type={item.design} className={cn("w-[84%] -rotate-3", fx)} />;
   if (item.product === "coaster") return <CoasterPlate className={cn("w-[80%]", fx)} />;
   if (item.product === "stand") return <StandPlate design={item.design ?? "remotap"} className={cn("w-[80%]", fx)} />;
   return <TapCardPhoto product={item.product} className={cn("h-[82%] w-auto rotate-3", fx)} />;
@@ -270,9 +272,9 @@ export function ProductGrid() {
   const { config } = useStore();
   const list = PRODUCTS.filter((p) => plansFor(config, p).length > 0);
   return (
-    <div className="grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-5">
       {list.map((p, i) => (
-        <ProductTile key={p} product={p} index={i} />
+        <ProductTile key={p} product={p} index={i} compact />
       ))}
     </div>
   );
@@ -437,7 +439,7 @@ export function Pricing() {
                   variant={hi || multi ? "default" : "outline"}
                   className="flex-1"
                   onClick={() => {
-                    addToCart({ product, plan, qty: 1, design: product === "card" ? "liquid" : product === "stand" ? "remotap" : undefined });
+                    addToCart({ product, plan, qty: 1, design: product === "card" ? "pvc" : product === "stand" ? "remotap" : undefined });
                     setCartOpen(true);
                   }}
                 >

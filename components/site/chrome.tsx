@@ -56,6 +56,7 @@ export function Header() {
     { href: "/pricing", label: t("nav.pricing") },
     { href: "/demo", label: t("nav.demo") },
     { href: "/faq", label: t("nav.faq") },
+    { href: "/services", label: t("nav.services") },
   ];
 
   return (
@@ -242,6 +243,9 @@ export function Footer() {
             <li><NavLink href="/pricing" className="hover:text-white">{t("nav.pricing")}</NavLink></li>
             <li><NavLink href="/why" className="hover:text-white">{t("cmp.eyebrow")}</NavLink></li>
             <li><NavLink href="/for" className="hover:text-white">{t("aud.eyebrow")}</NavLink></li>
+            <li><NavLink href="/services" className="hover:text-white">{t("nav.services")}</NavLink></li>
+            <li><NavLink href="/track" className="hover:text-white">{t("nav.track")}</NavLink></li>
+            <li><NavLink href="/distributors" className="hover:text-white">{t("nav.dist")}</NavLink></li>
           </ul>
         </div>
         <div>

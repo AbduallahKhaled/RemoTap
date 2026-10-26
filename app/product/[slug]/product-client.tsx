@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, Info, Palette, RotateCw, Shuffle, ShoppingBag, Truck } from "lucide-react";
+import { ArrowLeft, Check, Flame, Info, Palette, ShoppingBag, Smartphone, Truck } from "lucide-react";
 import { useStore } from "@/components/providers";
 import { NavLink, useNav } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
-import CardsShader from "@/components/ui/cards-shader-effect";
-import { CARD_DESIGNS } from "@/components/ui/cards-shader-effect-utils/shaders-map";
 import { NfcWaves } from "@/components/site/brand";
-import { CoasterPlate, StandPlate, StandVisual, TapCardPhoto } from "@/components/site/product-visuals";
+import { CardPhoto, CoasterPlate, StandPlate, StandVisual, TapCardPhoto } from "@/components/site/product-visuals";
 import { STAND_STYLES, standStyle } from "@/lib/stands";
 import { ProductTile } from "@/components/site/shop";
 import { Qty } from "@/components/site/chrome";
-import { EXTRAS, FEATURES, deliveryFee, PRODUCTS, extraPrice, isSized, itemPrice, planLabel, plansFor, price, type ExtraKey, type PlanKey, type ProductKey } from "@/lib/store";
+import { CARD_TYPES, EXTRAS, FEATURES, cardType, deliveryFee, isCarved, type CardType, PRODUCTS, extraPrice, isSized, itemPrice, planLabel, plansFor, price, type ExtraKey, type PlanKey, type ProductKey } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export default function ProductClient({ product }: { product: ProductKey }) {
@@ -22,8 +20,7 @@ export default function ProductClient({ product }: { product: ProductKey }) {
   const plans = plansFor(config, product);
   const [wantPlan, setPlan] = useState<PlanKey>("plus");
   const [qty, setQty] = useState(1);
-  const [design, setDesign] = useState(0);
-  const [flipped, setFlipped] = useState(false);
+  const [ctype, setCtype] = useState<CardType>("pvc");
   const [style, setStyle] = useState("remotap");
   const [extras, setExtras] = useState<ExtraKey[]>([]);
   const sized = isSized(product);
@@ -36,6 +33,8 @@ export default function ProductClient({ product }: { product: ProductKey }) {
     if (p === "basic" || p === "plus") setPlan(p);
     const st = qp.get("style");
     if (st && STAND_STYLES.some((x) => x.id === st)) setStyle(st);
+    const ty = qp.get("type");
+    if (ty && (CARD_TYPES as readonly string[]).includes(ty)) setCtype(cardType(ty));
   }, [qp]);
 
   // A product sold in one plan only (the InstaPay card) always uses that plan.
@@ -44,7 +43,7 @@ export default function ProductClient({ product }: { product: ProductKey }) {
     product,
     plan,
     qty,
-    design: product === "card" ? CARD_DESIGNS[design].id : product === "stand" ? style : undefined,
+    design: product === "card" ? ctype : product === "stand" ? style : undefined,
     extras: sized ? EXTRAS.filter((e) => extras.includes(e)) : undefined,
   };
   const st = standStyle(style);
@@ -77,15 +76,9 @@ export default function ProductClient({ product }: { product: ProductKey }) {
             <div className="hero-grid pointer-events-none absolute inset-0" />
             <div className="pointer-events-none absolute left-1/2 top-1/2 h-2/3 w-2/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-purple/25 blur-[90px]" />
             {product === "card" && (
-              <CardsShader
-                design={design}
-                onDesignChange={setDesign}
-                flipped={flipped}
-                onFlipChange={setFlipped}
-                maxWidth={440}
-                trackWindow={false}
-                domain={config.domain || "remotap.com"}
-              />
+              <div className="absolute inset-0 grid place-items-center">
+                <CardPhoto type={ctype} className="w-[74%] shadow-[0_40px_80px_-30px_rgba(0,0,0,.9)]" />
+              </div>
             )}
             {product === "stand" && <StandVisual className="absolute inset-0" design={style} />}
             {product === "coaster" && (
@@ -99,18 +92,7 @@ export default function ProductClient({ product }: { product: ProductKey }) {
               </div>
             )}
           </div>
-          {product === "card" && (
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setFlipped((f) => !f)} aria-pressed={flipped}>
-                <RotateCw /> {t("prod.flip")}
-              </Button>
-              {product === "card" && (
-                <Button variant="outline" size="sm" onClick={() => setDesign((d) => (d + 1) % CARD_DESIGNS.length)}>
-                  <Shuffle /> {t("prod.shuffle")}
-                </Button>
-              )}
-            </div>
-          )}
+          {product === "card" && <p className="mt-4 text-center text-sm text-white/60">{t(`ct.${ctype}.d`)}</p>}
           {/* RemoTap-branded photos are samples: the real stand or coaster is printed with the customer's own brand. */}
           {(product === "coaster" || (product === "stand" && style === "remotap")) && (
             <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-white/60">
@@ -238,24 +220,36 @@ export default function ProductClient({ product }: { product: ProductKey }) {
           {product === "card" && (
             <fieldset className="mt-7">
               <legend className="mb-3 text-sm font-bold uppercase tracking-wider text-white/60">
-                {t("prod.design")}: <span className="text-white">{CARD_DESIGNS[design].name[lang]}</span>
+                {t("prod.design")}: <span className="text-white">{t(`ct.${ctype}`)}</span>
               </legend>
-              <div className="flex flex-wrap gap-2.5" role="radiogroup">
-                {CARD_DESIGNS.map((d, i) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={design === i}
-                    aria-label={d.name[lang]}
-                    title={d.name[lang]}
-                    onClick={() => setDesign(i)}
-                    className={cn("h-9 w-12 rounded-lg border-2 transition hover:scale-105", design === i ? "border-white" : "border-white/15")}
-                    style={{ background: d.css }}
-                  />
-                ))}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup">
+                {CARD_TYPES.map((k) => {
+                  const diff = Number(config.card_type_price?.[k] ?? 0);
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      role="radio"
+                      aria-checked={ctype === k}
+                      onClick={() => {
+                        setCtype(k);
+                        nav.replace(`/product/card?plan=${plan}&type=${k}`);
+                      }}
+                      className={cn("rounded-2xl border p-2 text-start transition", ctype === k ? "border-brand-purple bg-brand-purple/10 ring-1 ring-brand-purple" : "border-white/12 hover:border-white/30")}
+                    >
+                      <CardPhoto type={k} className="w-full rounded-xl" />
+                      <span className="mt-2 block px-1 text-xs font-bold">{t(`ct.${k}`)}</span>
+                      <span className="block px-1 text-[11px] text-white/50">{diff === 0 ? " " : `${diff > 0 ? "+" : "−"}${money(Math.abs(diff))} ${cur}`}</span>
+                    </button>
+                  );
+                })}
               </div>
               <p className="mt-3 text-xs text-white/45">{t("prod.design.note")}</p>
+              {isCarved(ctype) && (
+                <p className="mt-3 flex gap-2 rounded-2xl border border-brand-cyan/30 bg-brand-cyan/10 p-3 text-xs text-white/80">
+                  <Flame className="mt-0.5 size-4 shrink-0 text-brand-cyan" /> {t("ct.carve")}
+                </p>
+              )}
             </fieldset>
           )}
 
@@ -281,6 +275,18 @@ export default function ProductClient({ product }: { product: ProductKey }) {
                 ))}
             </ul>
           </div>
+          {product === "card" && (
+            <div className="mt-4 flex gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-6">
+              <Smartphone className="size-5 shrink-0 text-brand-cyan" />
+              <div>
+                <h2 className="font-display text-sm uppercase tracking-wider">{t("ct.free")}</h2>
+                <p className="mt-2 text-sm text-white/60">{t("ct.free.b")}</p>
+                <Button asChild variant="outline" size="sm" className="mt-4">
+                  <NavLink href="/demo">{t("ct.demo")}</NavLink>
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="mt-4 flex gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-6">
             <Truck className="size-5 shrink-0 text-brand-cyan" />
             <div>
